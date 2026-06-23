@@ -41,9 +41,9 @@ PROVIDERS = {
     "🔵 Gemini (Google)": {
         "key": "gemini",
         "models": {
-            "Gemini 2.0 Flash (빠름/무료)": "gemini-2.0-flash",
-            "Gemini 1.5 Pro (고성능)": "gemini-1.5-pro",
-            "Gemini 1.5 Flash": "gemini-1.5-flash",
+            "Gemini 2.5 Flash (빠름/무료)": "gemini-2.5-flash",
+            "Gemini 2.5 Pro (고성능)": "gemini-2.5-pro",
+            "Gemini 2.0 Flash": "gemini-2.0-flash-001",
         }
     },
 }
