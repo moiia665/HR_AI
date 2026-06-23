@@ -26,7 +26,8 @@ st.markdown("""
 <style>
 [data-testid="stAppViewContainer"]{background:#f5f1eb;}
 [data-testid="stHeader"]{background:transparent;}
-[data-testid="stSidebar"]{background:#ece8e0; min-width:260px;}
+[data-testid="stSidebar"]{background:#f3efe8; min-width:290px;}
+[data-testid="stSidebarContent"]{padding:14px 10px 16px;}
 #MainMenu,footer{visibility:hidden;}
 [data-testid="stFileUploader"]{
   opacity:0 !important;height:0 !important;overflow:hidden !important;
@@ -36,6 +37,29 @@ st.markdown("""
 [data-testid="stSidebarContent"] .result-panel{
   font-size:13px;line-height:1.7;
 }
+.sidebar-brand{display:flex;align-items:center;gap:8px;margin:2px 4px 12px;
+  font-size:18px;font-weight:800;color:#211c18;}
+.sidebar-brand .mark{width:24px;height:24px;border-radius:8px;background:#26211c;
+  color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+.sidebar-section{font-size:11px;font-weight:800;color:#877d72;margin:18px 8px 7px;
+  text-transform:uppercase;letter-spacing:.04em;}
+.history-card{border-radius:10px;padding:8px 9px;margin:5px 2px 2px;
+  background:#fffaf2;border:1px solid #e2d8ca;box-shadow:0 1px 0 rgba(60,45,30,.04);}
+.history-card.active{background:#e8e1d7;border-color:#cfc2b1;}
+.history-title{font-size:13px;font-weight:700;line-height:1.3;color:#2a2520;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.history-meta{font-size:11px;color:#7d7369;margin-top:3px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;}
+.history-empty{font-size:12px;line-height:1.55;color:#8a8178;background:#fffaf2;
+  border:1px dashed #d8cfc3;border-radius:10px;padding:12px;margin:8px 2px;}
+[data-testid="stSidebar"] div[data-testid="stButton"] > button{
+  min-height:34px;border-radius:10px;border:1px solid #ded4c7;background:#fbf7ef;
+  color:#2a2520;font-weight:650;justify-content:flex-start;text-align:left;
+  white-space:normal;}
+[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover{
+  border-color:#b9aa99;background:#eee6db;color:#111;}
+[data-testid="stSidebar"] div[data-testid="stTextInput"] input{
+  border-radius:10px;background:#fbf7ef;border-color:#ded4c7;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -222,10 +246,11 @@ body{background:#f5f1eb;font-family:-apple-system,sans-serif;padding:8px;}
   font-size:9px;color:#3a2800;max-width:230px;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;border:1px solid rgba(255,255,255,.5);cursor:pointer;}
 .doc-card:hover{background:rgba(255,255,255,.98);}
-.bot{display:flex;flex-direction:column;align-items:center;width:64px;position:relative;
-  cursor:pointer;transition:transform .15s;}
-.bot:hover{transform:scale(1.08);}
-.bot-name{font-size:9.5px;font-weight:700;color:#3a3530;margin-top:2px;text-align:center;}
+.bot{display:flex;flex-direction:column;align-items:center;width:70px;position:relative;
+  cursor:pointer;transition:transform .15s,filter .15s;}
+.bot:hover{transform:translateY(-2px) scale(1.04);filter:saturate(1.06);}
+.bot svg{display:block;overflow:visible;filter:drop-shadow(0 4px 8px rgba(40,32,24,.22));}
+.bot-name{font-size:9.5px;font-weight:700;color:#3a3530;margin-top:3px;text-align:center;}
 .dot{width:7px;height:7px;border-radius:50%;margin-top:2px;background:#bbb;}
 .idle .dot{background:#bbb;}
 .active .dot{background:#f5c842;box-shadow:0 0 8px #f5c842;animation:blink .9s infinite;}
@@ -288,29 +313,151 @@ body{background:#f5f1eb;font-family:-apple-system,sans-serif;padding:8px;}
 const DATA=""" + data_json + """;
 const COLORS=DATA.colors;
 
+function robotFace(name,C,D){
+  if(name.includes('노무')){
+    return `<path d="M21 31l8 2.4M43 31l-8 2.4" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>
+      <circle cx="25" cy="37" r="3.6" fill="${C}"/><circle cx="39" cy="37" r="3.6" fill="${C}"/>
+      <path d="M28.5 44.5h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>`;
+  }
+  if(name.includes('계약')){
+    return `<path d="M21.5 31.5l7.2-.8M35.2 31.2l8 2.1" stroke="#273445" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="25" cy="37" r="3.7" fill="${C}"/><circle cx="39" cy="37" r="3.1" fill="${C}"/>
+      <path d="M29 44c2.6 1.5 6.2 1.1 8-.7" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>`;
+  }
+  if(name.includes('팩트')){
+    return `<rect x="20.5" y="33" width="9" height="6.5" rx="3.2" fill="${C}"/>
+      <rect x="34.5" y="33" width="9" height="6.5" rx="3.2" fill="${C}"/>
+      <path d="M29.5 36.2h5" stroke="${D}" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M28.5 44h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>`;
+  }
+  if(name.includes('급여')){
+    return `<circle cx="25" cy="36" r="3.9" fill="${C}"/><circle cx="39" cy="36" r="3.9" fill="${C}"/>
+      <circle cx="26.4" cy="34.6" r="1.05" fill="#FFFFFF"/><circle cx="40.4" cy="34.6" r="1.05" fill="#FFFFFF"/>
+      <path d="M29 43.5h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>`;
+  }
+  if(name.includes('채용')||name.includes('교육')){
+    return `<circle cx="25" cy="36" r="4" fill="${C}"/><circle cx="39" cy="36" r="4" fill="${C}"/>
+      <circle cx="26.4" cy="34.4" r="1.15" fill="#FFFFFF"/><circle cx="40.4" cy="34.4" r="1.15" fill="#FFFFFF"/>
+      <path d="M27 42.5c2.6 3 7.5 3 10 0" fill="none" stroke="#273445" stroke-width="2.2" stroke-linecap="round"/>`;
+  }
+  if(name.includes('최종')){
+    return `<circle cx="25" cy="36" r="4" fill="${C}"/><circle cx="39" cy="36" r="4" fill="${C}"/>
+      <circle cx="26.4" cy="34.4" r="1.15" fill="#FFFFFF"/><circle cx="40.4" cy="34.4" r="1.15" fill="#FFFFFF"/>
+      <path d="M27.5 43c2.5 2.5 6.8 2.8 9.6.2" fill="none" stroke="#273445" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M43 42c2.2.8 3.8 2.3 4.4 4.2" stroke="${D}" stroke-width="1.8" stroke-linecap="round"/>`;
+  }
+  return `<circle cx="25" cy="36" r="4.2" fill="${C}"/>
+    <circle cx="39" cy="36" r="4.2" fill="${C}"/>
+    <circle cx="26.5" cy="34.4" r="1.25" fill="#FFFFFF" opacity=".95"/>
+    <circle cx="40.5" cy="34.4" r="1.25" fill="#FFFFFF" opacity=".95"/>
+    <path d="M27 43c2.7 2.2 7.4 2.2 10 0" fill="none" stroke="#314052" stroke-width="2.2" stroke-linecap="round"/>`;
+}
+
+function robotAccessory(name,C,D){
+  if(name.includes('노무')){
+    return `<g transform="translate(48 56)">
+      <path d="M0-7l7 2.6v5.7c0 5.2-3 8-7 9.7-4-1.7-7-4.5-7-9.7v-5.7L0-7Z" fill="#FFFFFF" opacity=".88"/>
+      <path d="M-3 .8l2.2 2.3L4-2.8" fill="none" stroke="${D}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  }
+  if(name.includes('HRM')){
+    return `<g transform="translate(43 52)">
+      <rect x="0" y="0" width="15" height="17" rx="3.2" fill="#FFFFFF" opacity=".88"/>
+      <path d="M4 5l1.5 1.5L8.5 3.5M4 10l1.5 1.5L8.5 8.5M10 5.2h2M10 10.2h2" stroke="${D}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  }
+  if(name.includes('채용')){
+    return `<g transform="translate(47 56)">
+      <rect x="-8" y="-6" width="16" height="15" rx="4" fill="#FFFFFF" opacity=".88"/>
+      <circle cx="0" cy="-1.8" r="2.8" fill="${D}"/>
+      <path d="M-5 6c1.3-3 8.7-3 10 0" fill="none" stroke="${D}" stroke-width="1.7" stroke-linecap="round"/>
+    </g>`;
+  }
+  if(name.includes('계약')){
+    return `<g transform="translate(43 51)">
+      <rect x="0" y="0" width="14" height="18" rx="2.8" fill="#FFFFFF" opacity=".88"/>
+      <path d="M4 5h6M4 9h6M4 13h4" stroke="${D}" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M10 15l5-5" stroke="#273445" stroke-width="2" stroke-linecap="round"/>
+    </g>`;
+  }
+  if(name.includes('총무')){
+    return `<g transform="translate(45 54)">
+      <rect x="-5" y="4" width="17" height="10" rx="2.6" fill="#FFFFFF" opacity=".86"/>
+      <path d="M-2 4V1.5c0-1.5 2-2.5 4.2-2.5s4.2 1 4.2 2.5V4" fill="none" stroke="${D}" stroke-width="1.6"/>
+      <path d="M-1 9h10" stroke="${D}" stroke-width="1.7" stroke-linecap="round"/>
+    </g>`;
+  }
+  if(name.includes('급여')){
+    return `<g transform="translate(43 52)">
+      <rect x="0" y="0" width="15" height="18" rx="3" fill="#FFFFFF" opacity=".9"/>
+      <rect x="3" y="3" width="9" height="3" rx="1" fill="${D}" opacity=".75"/>
+      <circle cx="4" cy="10" r="1.2" fill="${D}"/><circle cx="7.5" cy="10" r="1.2" fill="${D}"/><circle cx="11" cy="10" r="1.2" fill="${D}"/>
+      <circle cx="4" cy="14" r="1.2" fill="${D}"/><circle cx="7.5" cy="14" r="1.2" fill="${D}"/><circle cx="11" cy="14" r="1.2" fill="${D}"/>
+    </g>`;
+  }
+  if(name.includes('교육')){
+    return `<g transform="translate(43 54)">
+      <path d="M-1 0c3.8-2 7-1.1 10 1.2v12.5c-3-2.2-6.2-3.1-10-1.2V0Z" fill="#FFFFFF" opacity=".88"/>
+      <path d="M9 1.2c3-2.3 6.2-3.2 10-1.2v12.5c-3.8-1.9-7-1-10 1.2V1.2Z" fill="#FFFFFF" opacity=".75"/>
+      <path d="M9 1.2v12.5" stroke="${D}" stroke-width="1.4" stroke-linecap="round"/>
+    </g>`;
+  }
+  if(name.includes('팩트')){
+    return `<g transform="translate(47 55)">
+      <circle cx="0" cy="0" r="5.6" fill="#FFFFFF" opacity=".84" stroke="${D}" stroke-width="2"/>
+      <path d="M4 4l6 6" stroke="${D}" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M-2.7 0l1.8 1.9L3-2.4" fill="none" stroke="${D}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  }
+  if(name.includes('실무')){
+    return `<g>
+      <path d="M16.5 27c1.8-8.5 29.2-8.5 31 0H16.5Z" fill="#FFFFFF" opacity=".76"/>
+      <path d="M24 20.8v6.2M32 19.5v7.5M40 20.8v6.2" stroke="${D}" stroke-width="1.6" stroke-linecap="round"/>
+    </g>`;
+  }
+  if(name.includes('최종')){
+    return `<g>
+      <path d="M28 56l4 4 4-4 2.6 8.5-6.6 4.7-6.6-4.7L28 56Z" fill="#FFFFFF" opacity=".85"/>
+      <path d="M31 59h2l1.2 5.2L32 66l-2.2-1.8L31 59Z" fill="${D}" opacity=".82"/>
+    </g>`;
+  }
+  return '';
+}
+
 function svgRobot(name,sz){
-  const s=sz||52;
+  const s=sz||56;
   const c=(COLORS[name]||["#666","#444"]);
   const C=c[0],D=c[1];
-  return `<svg width="${s}" height="${Math.round(s*1.18)}" viewBox="0 0 52 62" xmlns="http://www.w3.org/2000/svg">
-    <rect x="22" y="1" width="8" height="10" rx="4" fill="${C}"/>
-    <circle cx="26" cy="1" r="5.5" fill="${C}"/>
-    <rect x="3" y="10" width="46" height="31" rx="10" fill="${C}"/>
-    <circle cx="1" cy="26" r="5" fill="${D}"/>
-    <circle cx="51" cy="26" r="5" fill="${D}"/>
-    <rect x="8" y="16" width="14" height="13" rx="4.5" fill="white" opacity="0.95"/>
-    <rect x="30" y="16" width="14" height="13" rx="4.5" fill="white" opacity="0.95"/>
-    <circle cx="15" cy="22.5" r="4.5" fill="${C}"/>
-    <circle cx="37" cy="22.5" r="4.5" fill="${C}"/>
-    <circle cx="15" cy="22.5" r="2.5" fill="#111"/>
-    <circle cx="37" cy="22.5" r="2.5" fill="#111"/>
-    <circle cx="16.8" cy="20.8" r="1.1" fill="white"/>
-    <circle cx="38.8" cy="20.8" r="1.1" fill="white"/>
-    <rect x="15" y="33" width="22" height="4.5" rx="2.2" fill="rgba(255,255,255,0.38)"/>
-    <rect x="20" y="41" width="12" height="6" fill="${C}"/>
-    <rect x="1" y="47" width="50" height="15" rx="9 9 0 0" fill="${D}"/>
-    <rect x="17" y="50" width="18" height="8" rx="4" fill="${C}" opacity="0.5"/>
-    <circle cx="26" cy="54" r="2.5" fill="rgba(255,255,255,0.65)"/>
+  const uid='bot'+Array.from(name).reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,11);
+  return `<svg width="${s}" height="${Math.round(s*1.18)}" viewBox="0 0 64 76" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="${uid}-body" x1="13" y1="10" x2="52" y2="67" gradientUnits="userSpaceOnUse">
+        <stop stop-color="${C}"/>
+        <stop offset="1" stop-color="${D}"/>
+      </linearGradient>
+      <linearGradient id="${uid}-face" x1="16" y1="21" x2="48" y2="46" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFFFFF"/>
+        <stop offset="1" stop-color="#EEF4FF"/>
+      </linearGradient>
+      <linearGradient id="${uid}-shine" x1="20" y1="17" x2="44" y2="55" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFFFFF" stop-opacity=".48"/>
+        <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="32" cy="69" rx="21" ry="4.5" fill="#2D241B" opacity=".16"/>
+    <path d="M22 17c0-6.2 20-6.2 20 0" fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="32" cy="10" r="4.7" fill="url(#${uid}-body)" stroke="#fff" stroke-opacity=".72" stroke-width="1.2"/>
+    <rect x="7.5" y="19" width="49" height="37" rx="15" fill="url(#${uid}-body)"/>
+    <path d="M14 23c6-6 27-8 36 5v-2c0-4.5-3.6-8-8-8H22c-4.8 0-8 2.2-8 5Z" fill="url(#${uid}-shine)"/>
+    <circle cx="8" cy="37" r="5.5" fill="${D}"/>
+    <circle cx="56" cy="37" r="5.5" fill="${D}"/>
+    <rect x="15" y="25" width="34" height="22" rx="10" fill="url(#${uid}-face)" stroke="rgba(255,255,255,.78)" stroke-width="1.3"/>
+    ${robotFace(name,C,D)}
+    <path d="M19 55h26c7 0 12 5 12 12v1H7v-1c0-7 5-12 12-12Z" fill="url(#${uid}-body)"/>
+    <rect x="23" y="51" width="18" height="10" rx="5" fill="${D}" opacity=".92"/>
+    <circle cx="32" cy="61" r="3.3" fill="#FFFFFF" opacity=".72"/>
+    <path d="M18 60h8M38 60h8" stroke="#FFFFFF" stroke-opacity=".36" stroke-width="2.4" stroke-linecap="round"/>
+    ${robotAccessory(name,C,D)}
   </svg>`;
 }
 
@@ -414,7 +561,7 @@ for k, v in [
     ("bot_statuses", {}), ("bot_results", {}), ("case_notes", ""),
     ("stop_requested", False), ("meeting_running", False),
     ("meeting_history", []), ("renaming_idx", None), ("current_doc", ""),
-    ("show_result_panel", False), ("last_final", ""),
+    ("show_result_panel", False), ("last_final", ""), ("selected_history_idx", None),
     ("saved_provider", _cfg.get("provider", list(PROVIDERS.keys())[0])),
     ("saved_model",    _cfg.get("model", "")),
     ("saved_api_key",  _cfg.get("api_key", "")),
@@ -488,69 +635,134 @@ def show_settings():
             st.session_state.case_notes = nn
             st.rerun()
 
-# ── 왼쪽 사이드바: 히스토리 ───────────────────────────────
+# ── 왼쪽 사이드바: ChatGPT식 회의 목록 ─────────────────────
+def _short(text, limit=28):
+    text = (text or "").replace("\n", " ").strip()
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+def _open_history(real_idx):
+    h = st.session_state.meeting_history[real_idx]
+    statuses = {}
+    results = {}
+    for name, result in h.get("ops2", {}).items():
+        statuses[name] = "done"
+        results[name] = result
+    if h.get("fc2"):
+        statuses["팩트체크봇"] = "done"
+        results["팩트체크봇"] = h["fc2"]
+    if h.get("final"):
+        statuses["최종정리봇"] = "done"
+        results["최종정리봇"] = h["final"]
+    st.session_state.bot_statuses = statuses
+    st.session_state.bot_results = results
+    st.session_state.current_doc = h.get("doc", "")
+    st.session_state.last_final = h.get("final", "")
+    st.session_state.show_result_panel = bool(h.get("final"))
+    st.session_state.selected_history_idx = real_idx
+    st.session_state.meeting_running = False
+    st.session_state.stop_requested = False
+
+def _new_meeting():
+    st.session_state.bot_statuses = {}
+    st.session_state.bot_results = {}
+    st.session_state.current_doc = ""
+    st.session_state.last_final = ""
+    st.session_state.show_result_panel = False
+    st.session_state.selected_history_idx = None
+    st.session_state.renaming_idx = None
+    st.session_state.meeting_running = False
+    st.session_state.stop_requested = False
+
 with st.sidebar:
-    st.markdown("## 📜 회의 히스토리")
-    if not st.session_state.meeting_history:
-        st.info("회의를 진행하면\n여기에 기록이 쌓입니다.", icon="📋")
+    st.markdown(
+        '<div class="sidebar-brand"><span class="mark">W</span><span>인사총무 에이전트 AI</span></div>',
+        unsafe_allow_html=True,
+    )
+    if st.button("＋ 새 회의", key="new_meeting", use_container_width=True):
+        _new_meeting()
+        st.rerun()
+
+    query = st.text_input(
+        "회의 검색", key="history_filter", placeholder="회의 검색",
+        label_visibility="collapsed")
+
+    st.markdown('<div class="sidebar-section">최근 회의</div>', unsafe_allow_html=True)
+    history = st.session_state.meeting_history
+    if not history:
+        st.markdown(
+            '<div class="history-empty">회의를 진행하면 이곳에 대화처럼 저장됩니다.</div>',
+            unsafe_allow_html=True,
+        )
     else:
-        for i, h in enumerate(reversed(st.session_state.meeting_history)):
-            real_idx = len(st.session_state.meeting_history) - 1 - i
-            title = h.get("title", "회의")
-            label = (title[:20] + "…") if len(title) > 20 else title
-            with st.expander(f"#{real_idx+1}  {label}", expanded=False):
-                r_col, d_col = st.columns(2)
-                with r_col:
-                    if st.button("✏️ 이름", key=f"ren_{real_idx}",
+        q = query.strip().lower()
+        visible = []
+        for real_idx, h in enumerate(history):
+            haystack = " ".join([
+                h.get("title", ""), h.get("question", ""),
+                h.get("doc", ""), h.get("final", "")
+            ]).lower()
+            if not q or q in haystack:
+                visible.append(real_idx)
+
+        if not visible:
+            st.markdown(
+                '<div class="history-empty">검색 결과가 없습니다.</div>',
+                unsafe_allow_html=True,
+            )
+
+        for real_idx in reversed(visible):
+            h = history[real_idx]
+            title = h.get("title") or h.get("question") or "새 회의"
+            meta_bits = [h.get("time", "")]
+            if h.get("doc"):
+                meta_bits.append(h["doc"])
+            elif h.get("question"):
+                meta_bits.append(h["question"])
+            meta = " · ".join(_short(x, 22) for x in meta_bits if x)
+            active = st.session_state.selected_history_idx == real_idx
+            row_title = ("● " if active else "") + _short(title, 28)
+            row_label = row_title + (f"\n{_short(meta, 34)}" if meta else "")
+            open_col, rename_col, delete_col = st.columns([5.8, 1.1, 1.1])
+            with open_col:
+                if st.button(row_label, key=f"hist_open_{real_idx}",
+                             use_container_width=True):
+                    _open_history(real_idx)
+                    st.rerun()
+            with rename_col:
+                if st.button("✎", key=f"hist_ren_{real_idx}",
+                             use_container_width=True):
+                    st.session_state.renaming_idx = real_idx
+                    st.rerun()
+            with delete_col:
+                if st.button("×", key=f"hist_del_{real_idx}",
+                             use_container_width=True):
+                    st.session_state.meeting_history.pop(real_idx)
+                    if st.session_state.selected_history_idx == real_idx:
+                        _new_meeting()
+                    elif (st.session_state.selected_history_idx is not None
+                          and st.session_state.selected_history_idx > real_idx):
+                        st.session_state.selected_history_idx -= 1
+                    st.session_state.renaming_idx = None
+                    st.rerun()
+
+            if st.session_state.renaming_idx == real_idx:
+                new_name = st.text_input(
+                    "이름 바꾸기", value=h.get("title", ""),
+                    key=f"hist_name_{real_idx}", label_visibility="collapsed")
+                save_col, cancel_col = st.columns(2)
+                with save_col:
+                    if st.button("저장", key=f"hist_save_{real_idx}",
                                  use_container_width=True):
-                        st.session_state.renaming_idx = real_idx
+                        st.session_state.meeting_history[real_idx]["title"] = (
+                            new_name.strip() or h.get("title", "회의")
+                        )
+                        st.session_state.renaming_idx = None
                         st.rerun()
-                with d_col:
-                    if st.button("🗑️ 삭제", key=f"del_{real_idx}",
+                with cancel_col:
+                    if st.button("취소", key=f"hist_cancel_{real_idx}",
                                  use_container_width=True):
-                        st.session_state.meeting_history.pop(real_idx)
-                        if st.session_state.renaming_idx == real_idx:
-                            st.session_state.renaming_idx = None
+                        st.session_state.renaming_idx = None
                         st.rerun()
-                if st.session_state.renaming_idx == real_idx:
-                    new_name = st.text_input(
-                        "새 이름", value=h.get("title", ""),
-                        key=f"ri_{real_idx}", label_visibility="collapsed")
-                    s_col, c_col = st.columns(2)
-                    with s_col:
-                        if st.button("저장", key=f"rs_{real_idx}",
-                                     use_container_width=True):
-                            st.session_state.meeting_history[real_idx]["title"] = new_name
-                            st.session_state.renaming_idx = None
-                            st.rerun()
-                    with c_col:
-                        if st.button("취소", key=f"rc_{real_idx}",
-                                     use_container_width=True):
-                            st.session_state.renaming_idx = None
-                            st.rerun()
-                st.caption(h["time"])
-                if h.get("doc"):
-                    st.markdown(f"📄 `{h['doc']}`")
-                st.markdown(f"**Q:** {h['question']}")
-                if h.get("ops1"):
-                    st.markdown("---")
-                    for bn, op in h["ops1"].items():
-                        with st.expander(f"🤖 {bn} 1차", expanded=False):
-                            st.markdown(op)
-                if h.get("fc1"):
-                    with st.expander("🔍 팩트체크 1차", expanded=False):
-                        st.markdown(h["fc1"])
-                if h.get("ops2"):
-                    for bn, op in h["ops2"].items():
-                        with st.expander(f"🤖 {bn} 2차", expanded=False):
-                            st.markdown(op)
-                if h.get("fc2"):
-                    with st.expander("🔍 팩트체크 최종", expanded=False):
-                        st.markdown(h["fc2"])
-                if h.get("final"):
-                    st.markdown("---")
-                    st.markdown("**🎯 최종 결론**")
-                    st.markdown(h["final"])
 
 # ── 메인 레이아웃 ──────────────────────────────────────────
 # 최종 결론 패널이 열려 있으면 2컬럼 (테이블 | 결론), 아니면 풀 너비
@@ -798,5 +1010,6 @@ if go:
         "ops2": ops2, "fc2": fc2,
         "final": final_res,
     })
+    st.session_state.selected_history_idx = len(st.session_state.meeting_history) - 1
     st.success("✅ 회의 완료! 오른쪽에 최종 결론이 표시됩니다.")
     st.rerun()
