@@ -756,9 +756,8 @@ with main_col:
     st.divider()
     table_slot = st.empty()
     with table_slot:
-        components.html(render_html(st.session_state.bot_statuses,
-                        st.session_state.bot_results,
-                        st.session_state.current_doc), height=470)
+        _h=render_html(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc)
+        components.iframe("data:text/html;base64,"+base64.b64encode(_h.encode()).decode(),height=470,scrolling=False)
 
     ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
                              label_visibility="collapsed", key="doc_upload")
@@ -807,9 +806,8 @@ def upd(statuses_update, results_update=None):
     if results_update:
         st.session_state.bot_results.update(results_update)
     with table_slot:
-        components.html(render_html(st.session_state.bot_statuses,
-                        st.session_state.bot_results,
-                        st.session_state.current_doc), height=490)
+        _h=render_html(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc)
+        components.iframe("data:text/html;base64,"+base64.b64encode(_h.encode()).decode(),height=490,scrolling=False)
 
 def check_stop():
     if st.session_state.stop_requested:
