@@ -225,7 +225,7 @@ def build_content(doc_text, question, case_notes):
 
 def render_html(statuses, results, doc_name=""):
     data_json = json.dumps({"statuses": statuses, "results": results,
-                            "colors": BOT_COLORS, "doc": doc_name}, ensure_ascii=False)
+                            "colors": BOT_COLORS, "doc": doc_name}, ensure_ascii=True)
     return ("""<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js" defer></script>
@@ -548,7 +548,7 @@ function showBot(name){
 }
 function closeModal(){document.getElementById('overlay').classList.remove('show');}
 function maybeClose(e){if(e.target===document.getElementById('overlay'))closeModal();}
-render();
+try{render();}catch(e){document.getElementById('room').innerHTML='<pre style="color:red;font-size:11px;padding:8px">JS ERROR: '+e.message+'\n'+e.stack+'</pre>';}
 </script>
 </body></html>""")
 
@@ -756,8 +756,9 @@ with main_col:
     st.divider()
     table_slot = st.empty()
     with table_slot:
-        _h = render_html(st.session_state.bot_statuses, st.session_state.bot_results, st.session_state.current_doc)
-        components.iframe("data:text/html;base64," + base64.b64encode(_h.encode()).decode(), height=470)
+        components.html(render_html(st.session_state.bot_statuses,
+                        st.session_state.bot_results,
+                        st.session_state.current_doc), height=470)
 
     ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
                              label_visibility="collapsed", key="doc_upload")
@@ -806,8 +807,9 @@ def upd(statuses_update, results_update=None):
     if results_update:
         st.session_state.bot_results.update(results_update)
     with table_slot:
-        _h = render_html(st.session_state.bot_statuses, st.session_state.bot_results, st.session_state.current_doc)
-        components.iframe("data:text/html;base64," + base64.b64encode(_h.encode()).decode(), height=490)
+        components.html(render_html(st.session_state.bot_statuses,
+                        st.session_state.bot_results,
+                        st.session_state.current_doc), height=490)
 
 def check_stop():
     if st.session_state.stop_requested:
