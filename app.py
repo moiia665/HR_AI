@@ -28,16 +28,9 @@ st.markdown("""
 [data-testid="stHeader"]{background:transparent;}
 [data-testid="stSidebar"]{background:#ece8e0; min-width:260px;}
 #MainMenu,footer{visibility:hidden;}
-[data-testid="stFileUploaderDropzone"]{
-  background:#c8b89a !important;
-  border:2px dashed #8B5E3C !important;
-  border-radius:8px !important;
-}
-.doc-tray-label{
-  background:#ddd0bc;border-radius:8px 8px 0 0;
-  padding:6px 16px 4px;text-align:center;
-  font-size:11px;color:#6B4A1A;font-weight:600;
-  border:1px solid #c8b490;border-bottom:none;
+[data-testid="stFileUploader"]{
+  opacity:0 !important;height:0 !important;overflow:hidden !important;
+  margin:0 !important;padding:0 !important;position:absolute !important;
 }
 /* 결론 슬라이드 패널 */
 [data-testid="stSidebarContent"] .result-panel{
@@ -200,15 +193,26 @@ body{background:#f5f1eb;font-family:-apple-system,sans-serif;padding:8px;}
   padding:18px 8px 12px;border:1px solid #cec8be;}
 .row{display:flex;justify-content:center;align-items:flex-end;gap:6px;}
 .mid{display:flex;justify-content:center;align-items:center;gap:8px;margin:2px 0;}
-.table{flex:0 0 auto;width:280px;height:80px;
+.conf-wrap{display:flex;align-items:center;gap:6px;}
+.conf-main{flex:1;min-width:0;}
+.chair-col{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:4px;}
+.table{flex:0 0 auto;width:290px;min-height:90px;
   background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);
   border-radius:10px;border:3px solid #4A2E18;
   box-shadow:0 6px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
-.table-lbl{color:rgba(255,255,255,.5);font-size:10px;letter-spacing:2px;text-transform:uppercase;}
-.doc-card{background:rgba(255,255,255,0.88);border-radius:4px;padding:2px 8px;
-  font-size:9px;color:#3a2800;max-width:220px;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;border:1px solid rgba(255,255,255,0.5);}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.table-lbl{color:rgba(255,255,255,.45);font-size:9px;letter-spacing:2px;text-transform:uppercase;}
+.upload-zone{background:rgba(255,255,255,.12);border:1.5px dashed rgba(255,255,255,.5);
+  border-radius:7px;padding:6px 20px;cursor:pointer;text-align:center;
+  transition:all .2s;min-width:200px;}
+.upload-zone:hover,.upload-zone.drag-over{background:rgba(255,255,255,.22);
+  border-color:rgba(255,255,255,.85);}
+.upload-plus{font-size:18px;color:rgba(255,255,255,.65);font-weight:300;line-height:1;}
+.upload-txt{font-size:8.5px;color:rgba(255,255,255,.6);line-height:1.5;margin-top:2px;}
+.doc-card{background:rgba(255,255,255,.88);border-radius:4px;padding:3px 10px;
+  font-size:9px;color:#3a2800;max-width:230px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;border:1px solid rgba(255,255,255,.5);cursor:pointer;}
+.doc-card:hover{background:rgba(255,255,255,.98);}
 .bot{display:flex;flex-direction:column;align-items:center;width:64px;position:relative;
   cursor:pointer;transition:transform .15s;}
 .bot:hover{transform:scale(1.08);}
@@ -311,27 +315,48 @@ function botCard(name,status){
     + '<div class="dot"></div></div>';
 }
 
+function triggerUpload(){
+  try{
+    const fi=window.parent.document.querySelector('input[data-testid="stFileUploaderDropzoneInput"]');
+    if(fi) fi.click();
+  }catch(e){console.log('upload trigger error',e);}
+}
+function attachUploadHandlers(){
+  const z=document.getElementById('uploadZone');
+  if(!z)return;
+  z.addEventListener('click',function(e){e.stopPropagation();triggerUpload();});
+  z.addEventListener('dragover',function(e){e.preventDefault();z.classList.add('drag-over');});
+  z.addEventListener('dragleave',function(){z.classList.remove('drag-over');});
+  z.addEventListener('drop',function(e){
+    e.preventDefault();z.classList.remove('drag-over');
+    const files=e.dataTransfer.files;
+    if(!files.length)return;
+    try{
+      const dt=new DataTransfer();dt.items.add(files[0]);
+      const fi=window.parent.document.querySelector('input[data-testid="stFileUploaderDropzoneInput"]');
+      if(fi){fi.files=dt.files;fi.dispatchEvent(new Event('change',{bubbles:true}));}
+    }catch(err){console.log('drop error',err);}
+  });
+}
 function render(){
   const st=DATA.statuses;
   const g=n=>st[n]||'idle';
-  const top=['\\ub178\\ubb34\\ubd07','HRM\\ubd07','\\ucc44\\uc6a9\\ubd07','\\uacc4\\uc57d\\ubd07'].map(n=>botCard(n,g(n))).join('');
-  const btm=['\\ucd1d\\ubb34\\ubd07','\\uae09\\uc5ec\\ubd07','\\uad50\\uc721\\ubd07'].map(n=>botCard(n,g(n))).join('');
+  const topRow=['\\ub178\\ubb34\\ubd07','HRM\\ubd07','\\ucc44\\uc6a9\\ubd07','\\uacc4\\uc57d\\ubd07'].map(n=>botCard(n,g(n))).join('');
+  const btmRow=['\\ucd1d\\ubb34\\ubd07','\\uae09\\uc5ec\\ubd07','\\uad50\\uc721\\ubd07'].map(n=>botCard(n,g(n))).join('');
   const cs=g('\\ucd5c\\uc885\\uc815\\ub9ac\\ubd07');
   const cColor={idle:'#bbb',active:'#f5c842',done:'#52c463',error:'#e05555'}[cs]||'#bbb';
   const cGlow=cs!=='idle'?'box-shadow:0 0 7px '+cColor+';':'';
-  const cBubble=cs==='active'?'<div class="bubble">&#x1F4AC; \\uBC1C\\uC5B8 \\uC911</div>':'';
-  const docCard=DATA.doc?'<div class="doc-card">&#x1F4C4; '+DATA.doc+'</div>':'';
-  document.getElementById('room').innerHTML=
-    '<div class="row">'+top+'</div>'
-    +'<div class="mid">'
-      +botCard('\\ud31d\\ud2b8\\uccb4\\ud06c\\ubd07',g('\\ud31d\\ud2b8\\uccb4\\ud06c\\ubd07'))
-      +'<div class="table"><div class="table-lbl">WELLFINE HR AI</div>'+docCard+'</div>'
-      +botCard('\\uc2e4\\ubb34\\ubd07',g('\\uc2e4\\ubb34\\ubd07'))
-    +'</div>'
-    +'<div class="row">'+btm+'</div>'
-    +'<div class="chair-area">'
+  const cBubble=cs==='active'?'<div class="bubble">&#x1F4AC; \\ubc1c\\uc5b8 \\uc911</div>':'';
+  const tableInner=DATA.doc
+    ?'<div class="doc-card" onclick="triggerUpload()">&#x1F4C4; '+DATA.doc+'</div>'
+    :'<div class="upload-zone" id="uploadZone">'
+      +'<div class="upload-plus">+</div>'
+      +'<div class="upload-txt">\\ubb38\\uc11c \\ub4dc\\ub798\\uadf8 or<br>\\ud074\\ub9ad\\ud574\\uc11c \\uc5c5\\ub85c\\ub4dc</div>'
+    +'</div>';
+  const chairHtml=
+    '<div class="chair-col">'
       +'<div class="chair-wrap" onclick="showBot(\\'\\ucd5c\\uc885\\uc815\\ub9ac\\ubd07\\')">'
-        +cBubble+svgRobot('\\ucd5c\\uc885\\uc815\\ub9ac\\ubd07',42)
+        +cBubble+svgRobot('\\ucd5c\\uc885\\uc815\\ub9ac\\ubd07',44)
         +'<div class="chair-info">'
           +'<div class="chair-title">\\ucd5c\\uc885\\uc815\\ub9ac\\ubd07</div>'
           +'<div class="chair-sub">\\ud68c\\uc758 \\uc9c4\\ud589\\uc790</div>'
@@ -339,6 +364,20 @@ function render(){
         +'<div class="dot" style="background:'+cColor+';'+cGlow+'"></div>'
       +'</div>'
     +'</div>';
+  document.getElementById('room').innerHTML=
+    '<div class="conf-wrap">'
+      +'<div class="conf-main">'
+        +'<div class="row">'+topRow+'</div>'
+        +'<div class="mid">'
+          +botCard('\\ud31d\\ud2b8\\uccb4\\ud06c\\ubd07',g('\\ud31d\\ud2b8\\uccb4\\ud06c\\ubd07'))
+          +'<div class="table"><div class="table-lbl">WELLFINE HR AI</div>'+tableInner+'</div>'
+          +botCard('\\uc2e4\\ubb34\\ubd07',g('\\uc2e4\\ubb34\\ubd07'))
+        +'</div>'
+        +'<div class="row">'+btmRow+'</div>'
+      +'</div>'
+      +chairHtml
+    +'</div>';
+  attachUploadHandlers();
 }
 
 function showBot(name){
@@ -525,25 +564,22 @@ with main_col:
 
     st.divider()
 
-    # 파일 업로드 (테이블 위 중앙)
-    _lc, _mc, _rc = st.columns([1, 2, 1])
-    with _mc:
-        st.markdown(
-            '<div class="doc-tray-label">📄 문서를 테이블에 올려두세요</div>',
-            unsafe_allow_html=True)
-        ufile = st.file_uploader(
-            "문서", type=["pdf", "docx", "txt"],
-            label_visibility="collapsed", key="doc_upload")
-        if ufile:
-            st.session_state.current_doc = ufile.name
-
     table_slot = st.empty()
     with table_slot:
         components.html(
             render_html(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=490)
+            height=470)
+
+    # 숨겨진 파일 업로더 (테이블 JS가 트리거)
+    ufile = st.file_uploader(
+        "문서", type=["pdf", "docx", "txt"],
+        label_visibility="collapsed", key="doc_upload")
+    if ufile:
+        if st.session_state.current_doc != ufile.name:
+            st.session_state.current_doc = ufile.name
+            st.rerun()
 
     st.divider()
     st.markdown("##### 💬 질문 / 검토 요청")
