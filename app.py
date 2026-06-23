@@ -193,9 +193,9 @@ body{background:#f5f1eb;font-family:-apple-system,sans-serif;padding:8px;}
   padding:18px 8px 12px;border:1px solid #cec8be;}
 .row{display:flex;justify-content:center;align-items:flex-end;gap:6px;}
 .mid{display:flex;justify-content:center;align-items:center;gap:8px;margin:2px 0;}
-.conf-wrap{display:flex;align-items:center;gap:6px;}
-.conf-main{flex:1;min-width:0;}
-.chair-col{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-left:4px;}
+.conf-wrap{display:flex;align-items:center;justify-content:center;gap:10px;}
+.conf-main{flex:0 0 auto;}
+.chair-col{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .table{flex:0 0 auto;width:290px;min-height:90px;
   background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);
   border-radius:10px;border:3px solid #4A2E18;
