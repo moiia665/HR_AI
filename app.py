@@ -1,9 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import io, os, json, re, base64
+import io, os, json, re, base64, uuid
 from concurrent.futures import ThreadPoolExecutor
 
-st.set_page_config(page_title="웰파인 AI 회의실", page_icon="🤖", layout="wide",
+st.set_page_config(page_title="인사총무팀 AI 에이전트", page_icon="🤖", layout="wide",
                    initial_sidebar_state="expanded")
 
 CFG_FILE = "wellfine_config.json"
@@ -36,10 +36,36 @@ def load_shared_history():
 
 def save_shared_history(history):
     try:
-        with open(SHARED_HISTORY_FILE, "w", encoding="utf-8") as f:
+        tmp_file = SHARED_HISTORY_FILE + ".tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False)
+        os.replace(tmp_file, SHARED_HISTORY_FILE)
     except Exception:
         pass
+
+def _entry_key(entry):
+    return entry.get("id") or "|".join([
+        entry.get("time", ""), entry.get("title", ""),
+        entry.get("doc", ""), entry.get("question", "")
+    ])
+
+def append_shared_history(entry):
+    entry = dict(entry)
+    entry.setdefault("id", uuid.uuid4().hex)
+    latest = load_shared_history()
+    keys = {_entry_key(h) for h in latest}
+    if _entry_key(entry) not in keys:
+        latest.append(entry)
+        save_shared_history(latest)
+    st.session_state.meeting_history = latest
+    return max(0, len(latest) - 1)
+
+def sync_shared_history():
+    if st.session_state.get("meeting_running"):
+        return
+    latest = load_shared_history()
+    if latest != st.session_state.get("meeting_history", []):
+        st.session_state.meeting_history = latest
 
 st.markdown("""
 <style>
@@ -222,6 +248,24 @@ def build_content(doc_text, question, case_notes):
         parts.append("[질문/검토 요청]\n" + question.strip())
     return "\n\n".join(parts)
 
+def build_partial_summary(results):
+    if not results:
+        return ""
+    labels = {
+        "팩트체크봇_1차": "팩트체크봇 1차",
+        "팩트체크봇_2차": "팩트체크봇 최종",
+    }
+    lines = [
+        "## 중단 시점까지의 검토 내용",
+        "아래 내용은 회의가 중단되기 전까지 완료된 봇 발언입니다.",
+    ]
+    for name, result in results.items():
+        if not result:
+            continue
+        title = labels.get(name, name)
+        lines.append(f"\n### {title}\n{result}")
+    return "\n".join(lines).strip()
+
 
 def render_room(statuses, results, doc_name=""):
     SC = {'idle':'#bbb','active':'#f5c842','done':'#52c463','error':'#e05555'}
@@ -271,14 +315,17 @@ def render_room(statuses, results, doc_name=""):
     def svg_robot(name, sz):
         cols = BOT_COLORS.get(name, ['#888888','#666666'])
         C, D = cols
-        return (f'<svg width="{sz}" height="{sz}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-                f'<rect x="13" y="24" width="38" height="30" rx="8" fill="#D4C9B8"/>'
-                f'<rect x="15" y="26" width="34" height="26" rx="7" fill="#E8E0D0"/>'
+        return (f'<svg width="{sz}" height="{sz}" viewBox="0 0 64 70" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 4px 7px rgba(36,28,20,.22));overflow:visible">'
+                f'<ellipse cx="32" cy="63" rx="19" ry="4" fill="#2d241b" opacity=".16"/>'
+                f'<rect x="13" y="24" width="38" height="32" rx="10" fill="{D}"/>'
+                f'<rect x="15" y="26" width="34" height="28" rx="9" fill="#F4EFE6"/>'
                 + robot_face(name, C, D)
                 + robot_accessory(name, C, D)
-                + f'<path d="M20 54v6" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
-                f'<path d="M44 54v6" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
-                f'<path d="M9 36h4M51 36h4" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
+                + f'<rect x="22" y="54" width="20" height="7" rx="3.5" fill="{D}" opacity=".92"/>'
+                f'<circle cx="32" cy="57.5" r="2.3" fill="#fff" opacity=".75"/>'
+                f'<path d="M20 57v7" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
+                f'<path d="M44 57v7" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
+                f'<path d="M8 38h5M51 38h5" stroke="#9B8E7D" stroke-width="3.2" stroke-linecap="round"/>'
                 f'</svg>')
 
     def bot_card(name, status):
@@ -287,10 +334,10 @@ def render_room(statuses, results, doc_name=""):
         bubble = ('<div style="font-size:9px;background:#fff8e1;border-radius:6px;padding:1px 5px;color:#555;margin-bottom:2px">'
                   '···</div>') if status == 'active' else ''
         short = name.replace('제크', '').replace('정리', '')
-        return (f'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 3px;">'
+        return (f'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
                 + bubble
-                + svg_robot(name, 42)
-                + f'<div style="font-size:8.5px;font-weight:700;color:#2a2520;text-align:center">{short}</div>'
+                + svg_robot(name, 62)
+                + f'<div style="font-size:10px;font-weight:800;color:#2a2520;text-align:center;line-height:1.1">{short}</div>'
                 + f'<div style="width:7px;height:7px;border-radius:50%;background:{color};{glow}"></div>'
                 + '</div>')
 
@@ -310,30 +357,46 @@ def render_room(statuses, results, doc_name=""):
     c_bubble = ('<div style="font-size:9px;background:#fff8e1;border-radius:6px;padding:1px 5px;color:#555;margin-bottom:2px">'
                 '정리 중…</div>') if cs == 'active' else ''
 
+    podium = (
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;'
+        'min-width:124px;margin-left:8px;">'
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;'
+        'background:rgba(255,255,255,.48);border:1px solid #d7cfc3;border-radius:12px;'
+        'padding:8px 12px 10px;box-shadow:0 5px 14px rgba(44,35,24,.12);">'
+        + c_bubble
+        + svg_robot('최종정리봇', 72)
+        + '<div style="width:72px;height:24px;margin-top:-6px;border-radius:7px 7px 4px 4px;'
+          'background:linear-gradient(180deg,#7C5838,#50331F);border:2px solid #3d2618;'
+          'box-shadow:0 5px 10px rgba(36,25,16,.25);display:flex;align-items:center;'
+          'justify-content:center;color:rgba(255,255,255,.62);font-size:8px;font-weight:800;'
+          'letter-spacing:1px;">HOST</div>'
+        + '<div style="font-size:10px;font-weight:800;color:#2a2520;margin-top:3px">최종정리봇</div>'
+          '<div style="font-size:9px;color:#6b5e4f">회의 진행자</div>'
+        + f'<div style="width:8px;height:8px;border-radius:50%;background:{c_color};{c_glow}"></div>'
+        + '</div></div>'
+    )
+
     return (
         '<div style="background:linear-gradient(180deg,#e8e2d6,#dfd9cd);border-radius:16px;'
-        'padding:16px 8px 14px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;">'
-        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:4px;margin-bottom:4px;">'
+        'padding:18px 10px 16px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;">'
+        '<div style="display:flex;justify-content:center;align-items:center;gap:16px;">'
+        '<div style="display:flex;flex-direction:column;align-items:center;">'
+        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:6px;">'
         + top_row + '</div>'
-        '<div style="display:flex;justify-content:center;align-items:center;gap:6px;margin:4px 0;">'
+        '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
         + bot_card('팩트체크봇', g('팩트체크봇'))
-        + '<div style="width:270px;min-height:75px;background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);'
+        + '<div style="width:320px;min-height:92px;background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);'
           'border-radius:10px;border:3px solid #4A2E18;box-shadow:0 6px 20px rgba(0,0,0,.4);'
           'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;">'
-          '<div style="color:rgba(255,255,255,.45);font-size:8px;letter-spacing:2px;text-transform:uppercase;">WELLFINE HR AI</div>'
+          '<div style="color:rgba(255,255,255,.45);font-size:8px;letter-spacing:2px;text-transform:uppercase;">HR TEAM AI AGENTS</div>'
         + table_inner + '</div>'
         + bot_card('실무봇', g('실무봇'))
         + '</div>'
-        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:4px;margin-top:4px;">'
+        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:6px;">'
         + btm_row + '</div>'
-        '<div style="display:flex;justify-content:center;margin-top:10px;">'
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">'
-        + c_bubble
-        + svg_robot('최종정리봇', 44)
-        + '<div style="font-size:9px;font-weight:700;color:#2a2520">최종정리봇</div>'
-          '<div style="font-size:8px;color:#6b5e4f">회의 진행자</div>'
-        + f'<div style="width:8px;height:8px;border-radius:50%;background:{c_color};{c_glow}"></div>'
-        + '</div></div></div>'
+        + '</div>'
+        + podium
+        + '</div></div>'
     )
 
 
@@ -344,7 +407,7 @@ for k, v in [
     ("stop_requested", False), ("meeting_running", False),
     ("meeting_history", []), ("renaming_idx", None), ("current_doc", ""),
     ("show_result_panel", False), ("last_final", ""), ("selected_history_idx", None),
-    ("current_question", ""), ("feedback_pending", ""),
+    ("current_question", ""), ("feedback_pending", ""), ("stop_notice", ""),
     ("saved_provider", _cfg.get("provider", list(PROVIDERS.keys())[0])),
     ("saved_model",    _cfg.get("model", "")),
     ("saved_api_key",  _cfg.get("api_key", "")),
@@ -425,17 +488,24 @@ def _short(text, limit=28):
 def _open_history(real_idx):
     h = st.session_state.meeting_history[real_idx]
     statuses = {}; results = {}
-    for name, result in h.get("ops2", {}).items():
-        statuses[name] = "done"; results[name] = result
-    if h.get("fc2"):
-        statuses["팩트체크봇"] = "done"; results["팩트체크봇"] = h["fc2"]
-    if h.get("final"):
-        statuses["최종정리봇"] = "done"; results["최종정리봇"] = h["final"]
+    if h.get("results") or h.get("statuses"):
+        results = dict(h.get("results", {}))
+        statuses = dict(h.get("statuses", {}))
+    else:
+        for name, result in h.get("ops2", {}).items():
+            statuses[name] = "done"; results[name] = result
+        if h.get("fc2"):
+            statuses["팩트체크봇"] = "done"; results["팩트체크봇"] = h["fc2"]
+        if h.get("final"):
+            statuses["최종정리봇"] = "done"; results["최종정리봇"] = h["final"]
+    panel_text = h.get("final") or h.get("partial_summary") or (
+        build_partial_summary(results) if h.get("partial") else ""
+    )
     st.session_state.bot_statuses = statuses
     st.session_state.bot_results = results
     st.session_state.current_doc = h.get("doc", "")
-    st.session_state.last_final = h.get("final", "")
-    st.session_state.show_result_panel = bool(h.get("final"))
+    st.session_state.last_final = panel_text
+    st.session_state.show_result_panel = bool(panel_text)
     st.session_state.selected_history_idx = real_idx
     st.session_state.meeting_running = False
     st.session_state.stop_requested = False
@@ -451,10 +521,12 @@ def _new_meeting():
     st.session_state.meeting_running = False
     st.session_state.stop_requested = False
     st.session_state.feedback_pending = ""
+    st.session_state.stop_notice = ""
 
 with st.sidebar:
+    sync_shared_history()
     st.markdown(
-        '<div class="sidebar-brand"><span class="mark">W</span><span>인사총무 에이전트 AI</span></div>',
+        '<div class="sidebar-brand"><span class="mark">HR</span><span>인사총무팀 AI 에이전트</span></div>',
         unsafe_allow_html=True)
     if st.button("＋ 새 회의", key="new_meeting", use_container_width=True):
         _new_meeting(); st.rerun()
@@ -530,7 +602,7 @@ else:
 with main_col:
     col_title, col_cfg = st.columns([5, 1])
     with col_title:
-        st.markdown("## 🏢 웰파인 인사총무 AI 회의실")
+        st.markdown("## 🏢 인사총무팀 AI 에이전트")
         api_status = " ✅" if _api_key else " ⚠️ API키 미입력"
         st.caption(f"설정: {_p.split()[-1]} · {_ml}" + api_status)
     with col_cfg:
@@ -538,10 +610,19 @@ with main_col:
         if st.button("⚙️ 설정", use_container_width=True):
             show_settings()
 
+    if st.session_state.get("stop_notice"):
+        st.warning(st.session_state.stop_notice)
+        st.session_state.stop_notice = ""
+
     st.divider()
     table_slot = st.empty()
     with table_slot:
-        st.html(render_room(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc))
+        components.html(
+            render_room(st.session_state.bot_statuses,
+                        st.session_state.bot_results,
+                        st.session_state.current_doc),
+            height=440,
+        )
 
     ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
                              label_visibility="collapsed", key="doc_upload")
@@ -570,7 +651,10 @@ with main_col:
             feedback_q = st.text_area("피드백 내용", key="feedback_input", height=80,
                 placeholder="예: 수습 3개월 조항에 대해 더 자세히 알고 싶어요...")
             if st.button("🔄 피드백 반영 추가 회의", key="feedback_go"):
-                st.session_state.feedback_pending = feedback_q; st.rerun()
+                if feedback_q.strip():
+                    st.session_state.feedback_pending = feedback_q.strip(); st.rerun()
+                else:
+                    st.warning("추가 질문이나 피드백 내용을 먼저 입력해주세요.")
 
     if st.session_state.get("feedback_pending"):
         go = True
@@ -590,28 +674,46 @@ def upd(statuses_update, results_update=None):
     if results_update:
         st.session_state.bot_results.update(results_update)
     with table_slot:
-        st.html(render_room(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc))
+        components.html(
+            render_room(st.session_state.bot_statuses,
+                        st.session_state.bot_results,
+                        st.session_state.current_doc),
+            height=460,
+        )
 
 def check_stop():
     if st.session_state.stop_requested:
+        notice = "⏹ 회의가 중단되었습니다."
         if st.session_state.bot_results:
             from datetime import datetime
             _q = st.session_state.get("current_question", "")
             _pt = "[중단] " + (_q[:25] if _q else st.session_state.current_doc or "회의")
-            st.session_state.meeting_history.append({
+            partial_results = dict(st.session_state.bot_results)
+            partial_statuses = dict(st.session_state.bot_statuses)
+            partial_summary = build_partial_summary(partial_results)
+            entry = {
                 "time":     datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "title":    _pt,
                 "doc":      st.session_state.current_doc,
                 "question": _q,
                 "ops1": {}, "fc1": "",
-                "ops2":     st.session_state.bot_results,
+                "ops2":     partial_results,
                 "fc2": "", "final": "",
+                "statuses": partial_statuses,
+                "results":  partial_results,
+                "partial_summary": partial_summary,
                 "partial":  True,
-            })
-            save_shared_history(st.session_state.meeting_history)
-            st.session_state.selected_history_idx = len(st.session_state.meeting_history) - 1
-        st.warning("⏹ 회의가 중단되었습니다. 테이블의 봇을 클릭하면 완료된 결과를 확인할 수 있습니다.")
-        st.stop()
+            }
+            st.session_state.selected_history_idx = append_shared_history(entry)
+            st.session_state.last_final = partial_summary
+            st.session_state.show_result_panel = bool(partial_summary)
+            notice += " 완료된 검토 내용은 오른쪽 결과 패널과 최근 회의 기록에서 확인할 수 있습니다."
+        else:
+            notice += " 아직 저장할 완료 검토 내용은 없습니다."
+        st.session_state.meeting_running = False
+        st.session_state.stop_requested = False
+        st.session_state.stop_notice = notice
+        st.rerun()
 
 # ── 회의 진행 ──────────────────────────────────────────────
 if go:
@@ -745,7 +847,7 @@ if go:
 
     from datetime import datetime
     title = (ufile.name if ufile else effective_question[:30])
-    st.session_state.meeting_history.append({
+    entry = {
         "time":     datetime.now().strftime("%Y-%m-%d %H:%M"),
         "title":    title,
         "doc":      ufile.name if ufile else "",
@@ -753,8 +855,10 @@ if go:
         "ops1": ops1, "fc1": fc1,
         "ops2": ops2, "fc2": fc2,
         "final": final_res,
-    })
-    st.session_state.selected_history_idx = len(st.session_state.meeting_history) - 1
+        "statuses": dict(st.session_state.bot_statuses),
+        "results":  dict(st.session_state.bot_results),
+    }
+    st.session_state.selected_history_idx = append_shared_history(entry)
 
     # 자동 메모리
     try:
@@ -766,6 +870,5 @@ if go:
     except Exception:
         pass
 
-    save_shared_history(st.session_state.meeting_history)
     st.success("✅ 회의 완료! 오른쪽에 최종 결론이 표시됩니다.")
     st.rerun()
