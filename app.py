@@ -223,334 +223,119 @@ def build_content(doc_text, question, case_notes):
     return "\n\n".join(parts)
 
 
-def render_html(statuses, results, doc_name=""):
-    data_json = json.dumps({"statuses": statuses, "results": results,
-                            "colors": BOT_COLORS, "doc": doc_name}, ensure_ascii=True)
-    return ("""<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js" defer></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#f5f1eb;font-family:-apple-system,sans-serif;padding:8px;}
-.room{background:linear-gradient(180deg,#e8e2d6,#dfd9cd);border-radius:16px;
-  padding:18px 8px 12px;border:1px solid #cec8be;}
-.row{display:flex;justify-content:center;align-items:flex-end;gap:6px;}
-.mid{display:flex;justify-content:center;align-items:center;gap:8px;margin:2px 0;}
-.conf-wrap{display:flex;align-items:center;justify-content:center;gap:10px;}
-.conf-main{flex:0 0 auto;}
-.chair-col{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.table{flex:0 0 auto;width:290px;min-height:90px;
-  background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);
-  border-radius:10px;border:3px solid #4A2E18;
-  box-shadow:0 6px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
-.table-lbl{color:rgba(255,255,255,.45);font-size:9px;letter-spacing:2px;text-transform:uppercase;}
-.upload-zone{background:rgba(255,255,255,.12);border:1.5px dashed rgba(255,255,255,.5);
-  border-radius:7px;padding:6px 20px;cursor:pointer;text-align:center;
-  transition:all .2s;min-width:200px;}
-.upload-zone:hover,.upload-zone.drag-over{background:rgba(255,255,255,.22);
-  border-color:rgba(255,255,255,.85);}
-.upload-plus{font-size:18px;color:rgba(255,255,255,.65);font-weight:300;line-height:1;}
-.upload-txt{font-size:8.5px;color:rgba(255,255,255,.6);line-height:1.5;margin-top:2px;}
-.doc-card{background:rgba(255,255,255,.88);border-radius:4px;padding:3px 10px;
-  font-size:9px;color:#3a2800;max-width:230px;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;border:1px solid rgba(255,255,255,.5);cursor:pointer;}
-.doc-card:hover{background:rgba(255,255,255,.98);}
-.bot{display:flex;flex-direction:column;align-items:center;width:70px;position:relative;
-  cursor:pointer;transition:transform .15s,filter .15s;}
-.bot:hover{transform:translateY(-2px) scale(1.04);}
-.bot svg{display:block;overflow:visible;filter:drop-shadow(0 4px 8px rgba(40,32,24,.22));}
-.bot-name{font-size:9.5px;font-weight:700;color:#3a3530;margin-top:3px;text-align:center;}
-.dot{width:7px;height:7px;border-radius:50%;margin-top:2px;background:#bbb;}
-.idle .dot{background:#bbb;}
-.active .dot{background:#f5c842;box-shadow:0 0 8px #f5c842;animation:blink .9s infinite;}
-.done .dot{background:#52c463;box-shadow:0 0 5px #52c463;}
-.error .dot{background:#e05555;}
-.skip{opacity:0.28;filter:grayscale(80%);cursor:default !important;}
-.skip .dot{background:#ccc !important;box-shadow:none !important;}
-.bubble{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);
-  background:#fff9e6;border:1.5px solid #f5c842;border-radius:8px;padding:3px 7px;
-  font-size:9px;font-weight:800;color:#6B4A00;white-space:nowrap;
-  box-shadow:0 3px 8px rgba(0,0,0,.15);animation:float 1.5s ease-in-out infinite;z-index:5;}
-.bubble::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
-  border:5px solid transparent;border-top-color:#f5c842;}
-.chair-wrap{background:rgba(255,255,255,.65);border-radius:10px;padding:6px 16px;
-  display:inline-flex;align-items:center;gap:8px;border:1px solid #d8d0c8;
-  cursor:pointer;transition:transform .15s;}
-.chair-wrap:hover{transform:scale(1.04);}
-.chair-info{display:flex;flex-direction:column;}
-.chair-title{font-size:11px;font-weight:700;color:#3a3530;}
-.chair-sub{font-size:9px;color:#aaa;font-style:italic;}
-.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center;}
-.overlay.show{display:flex;}
-.modal{background:#fff;border-radius:14px;padding:20px 22px;width:90%;max-width:540px;
-  max-height:82vh;overflow-y:auto;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.3);}
-.modal-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;
-  padding-bottom:8px;border-bottom:2px solid #eee;}
-.modal-hdr h2{font-size:14px;font-weight:700;color:#333;margin:0;}
-.modal-body{font-size:13px;line-height:1.75;color:#444;}
-.modal-body h2,.modal-body h3{font-size:13px;font-weight:700;margin:10px 0 4px;color:#222;}
-.modal-body p{margin:4px 0;}
-.modal-body ul,.modal-body ol{padding-left:18px;margin:4px 0;}
-.modal-body li{margin:3px 0;}
-.modal-body strong{color:#222;}
-.close-btn{position:absolute;top:10px;right:14px;cursor:pointer;
-  font-size:18px;color:#aaa;background:none;border:none;line-height:1;padding:2px 6px;border-radius:4px;}
-.close-btn:hover{background:#f0f0f0;color:#333;}
-.no-result{font-size:12px;color:#aaa;font-style:italic;padding:20px 0;text-align:center;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
-@keyframes float{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-3px);}}
-</style>
-</head><body>
-<div class="room" id="room"></div>
-<div class="overlay" id="overlay" onclick="maybeClose(event)">
-  <div class="modal" id="modal">
-    <button class="close-btn" onclick="closeModal()">&#x2715;</button>
-    <div class="modal-hdr"><div id="modal-icon"></div><h2 id="modal-title"></h2></div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-<script>
-const DATA=""" + data_json + """;
-const COLORS=DATA.colors;
+def render_room(statuses, results, doc_name=""):
+    SC = {'idle':'#bbb','active':'#f5c842','done':'#52c463','error':'#e05555'}
 
-function robotFace(name,C,D){
-  if(name.includes('\ub178\ubb34')){
-    return `<path d="M21 31l8 2.4M43 31l-8 2.4" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>
-      <circle cx="25" cy="37" r="3.6" fill="${C}"/><circle cx="39" cy="37" r="3.6" fill="${C}"/>
-      <path d="M28.5 44.5h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>`;
-  }
-  if(name.includes('\uacc4\uc57d')){
-    return `<path d="M21.5 31.5l7.2-.8M35.2 31.2l8 2.1" stroke="#273445" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="25" cy="37" r="3.7" fill="${C}"/><circle cx="39" cy="37" r="3.1" fill="${C}"/>
-      <path d="M29 44c2.6 1.5 6.2 1.1 8-.7" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>`;
-  }
-  if(name.includes('\ud329\ud2b8')){
-    return `<rect x="20.5" y="33" width="9" height="6.5" rx="3.2" fill="${C}"/>
-      <rect x="34.5" y="33" width="9" height="6.5" rx="3.2" fill="${C}"/>
-      <path d="M29.5 36.2h5" stroke="${D}" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M28.5 44h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>`;
-  }
-  if(name.includes('\uae09\uc5ec')){
-    return `<circle cx="25" cy="36" r="3.9" fill="${C}"/><circle cx="39" cy="36" r="3.9" fill="${C}"/>
-      <circle cx="26.4" cy="34.6" r="1.05" fill="#FFFFFF"/><circle cx="40.4" cy="34.6" r="1.05" fill="#FFFFFF"/>
-      <path d="M29 43.5h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>`;
-  }
-  if(name.includes('\ucc44\uc6a9')||name.includes('\uad50\uc721')){
-    return `<circle cx="25" cy="36" r="4" fill="${C}"/><circle cx="39" cy="36" r="4" fill="${C}"/>
-      <circle cx="26.4" cy="34.4" r="1.15" fill="#FFFFFF"/><circle cx="40.4" cy="34.4" r="1.15" fill="#FFFFFF"/>
-      <path d="M27 42.5c2.6 3 7.5 3 10 0" fill="none" stroke="#273445" stroke-width="2.2" stroke-linecap="round"/>`;
-  }
-  if(name.includes('\ucd5c\uc885')){
-    return `<circle cx="25" cy="36" r="4" fill="${C}"/><circle cx="39" cy="36" r="4" fill="${C}"/>
-      <circle cx="26.4" cy="34.4" r="1.15" fill="#FFFFFF"/><circle cx="40.4" cy="34.4" r="1.15" fill="#FFFFFF"/>
-      <path d="M27.5 43c2.5 2.5 6.8 2.8 9.6.2" fill="none" stroke="#273445" stroke-width="2.2" stroke-linecap="round"/>`;
-  }
-  return `<circle cx="25" cy="36" r="4.2" fill="${C}"/><circle cx="39" cy="36" r="4.2" fill="${C}"/>
-    <circle cx="26.5" cy="34.4" r="1.25" fill="#FFFFFF" opacity=".95"/>
-    <circle cx="40.5" cy="34.4" r="1.25" fill="#FFFFFF" opacity=".95"/>
-    <path d="M27 43c2.7 2.2 7.4 2.2 10 0" fill="none" stroke="#314052" stroke-width="2.2" stroke-linecap="round"/>`;
-}
+    def robot_face(name, C, D):
+        if '노무' in name:
+            return f'<path d="M21 31l8 2.4M43 31l-8 2.4" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><circle cx="25" cy="37" r="3.6" fill="{C}"/><circle cx="39" cy="37" r="3.6" fill="{C}"/><path d="M28.5 44.5h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>'
+        if '계약' in name:
+            return f'<path d="M21.5 31.5l7.2-.8M35.2 31.2l8 2.1" stroke="#273445" stroke-width="2" stroke-linecap="round"/><circle cx="25" cy="37" r="3.7" fill="{C}"/><circle cx="39" cy="37" r="3.1" fill="{C}"/><path d="M29 44c2.6 1.5 6.2 1.1 8-.7" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        if '팩트' in name:
+            return f'<rect x="20.5" y="33" width="9" height="6.5" rx="3.2" fill="{C}"/><rect x="34.5" y="33" width="9" height="6.5" rx="3.2" fill="{C}"/><path d="M29.5 36.2h5" stroke="{D}" stroke-width="1.8" stroke-linecap="round"/><path d="M28.5 44h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>'
+        if '급여' in name:
+            return f'<circle cx="25" cy="36" r="3.9" fill="{C}"/><circle cx="39" cy="36" r="3.9" fill="{C}"/><circle cx="26.4" cy="34.6" r="1.05" fill="#FFFFFF"/><circle cx="40.4" cy="34.6" r="1.05" fill="#FFFFFF"/><path d="M29 43.5h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        if 'HRM' in name:
+            return f'<path d="M21 32.5l9 1.2M43 32.5l-9 1.2" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><rect x="22" y="36" width="7" height="5" rx="3.5" fill="{C}"/><rect x="35" y="36" width="7" height="5" rx="3.5" fill="{C}"/><path d="M29 44h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        if '채용' in name:
+            return f'<circle cx="25" cy="36.5" r="3.8" fill="{C}"/><circle cx="39" cy="36.5" r="3.8" fill="{C}"/><path d="M29 43c1.8 2.2 5.5 2.2 6 0" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        if '총무' in name:
+            return f'<path d="M22 33.5l8.5 2M42 33.5l-8.5 2" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><circle cx="25.5" cy="38.5" r="3.5" fill="{C}"/><circle cx="38.5" cy="38.5" r="3.5" fill="{C}"/><path d="M29 44h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        if '교육' in name:
+            return f'<circle cx="25" cy="36" r="3.8" fill="{C}"/><circle cx="39" cy="36" r="3.8" fill="{C}"/><path d="M27.5 44.5h9" stroke="#273445" stroke-width="2.5" stroke-linecap="round"/>'
+        if '실무' in name:
+            return f'<path d="M21 32l9 3M43 32l-9 3" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><circle cx="25" cy="38" r="3.7" fill="{C}"/><circle cx="39" cy="38" r="3.7" fill="{C}"/><path d="M28.5 44c1 1.8 5 1.8 7 0" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        return f'<circle cx="25" cy="36" r="3.8" fill="{C}"/><circle cx="39" cy="36" r="3.8" fill="{C}"/><path d="M29 44h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
 
-function robotAccessory(name,C,D){
-  if(name.includes('\ub178\ubb34')){
-    return `<g transform="translate(48 56)">
-      <path d="M0-7l7 2.6v5.7c0 5.2-3 8-7 9.7-4-1.7-7-4.5-7-9.7v-5.7L0-7Z" fill="#FFFFFF" opacity=".88"/>
-      <path d="M-3 .8l2.2 2.3L4-2.8" fill="none" stroke="${D}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>`;
-  }
-  if(name.includes('HRM')){
-    return `<g transform="translate(43 52)">
-      <rect x="0" y="0" width="15" height="17" rx="3.2" fill="#FFFFFF" opacity=".88"/>
-      <path d="M4 5l1.5 1.5L8.5 3.5M4 10l1.5 1.5L8.5 8.5M10 5.2h2M10 10.2h2" stroke="${D}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>`;
-  }
-  if(name.includes('\ucc44\uc6a9')){
-    return `<g transform="translate(47 56)">
-      <rect x="-8" y="-6" width="16" height="15" rx="4" fill="#FFFFFF" opacity=".88"/>
-      <circle cx="0" cy="-1.8" r="2.8" fill="${D}"/>
-      <path d="M-5 6c1.3-3 8.7-3 10 0" fill="none" stroke="${D}" stroke-width="1.7" stroke-linecap="round"/>
-    </g>`;
-  }
-  if(name.includes('\uacc4\uc57d')){
-    return `<g transform="translate(43 51)">
-      <rect x="0" y="0" width="14" height="18" rx="2.8" fill="#FFFFFF" opacity=".88"/>
-      <path d="M4 5h6M4 9h6M4 13h4" stroke="${D}" stroke-width="1.4" stroke-linecap="round"/>
-      <path d="M10 15l5-5" stroke="#273445" stroke-width="2" stroke-linecap="round"/>
-    </g>`;
-  }
-  if(name.includes('\ucd1d\ubb34')){
-    return `<g transform="translate(45 54)">
-      <rect x="-5" y="4" width="17" height="10" rx="2.6" fill="#FFFFFF" opacity=".86"/>
-      <path d="M-2 4V1.5c0-1.5 2-2.5 4.2-2.5s4.2 1 4.2 2.5V4" fill="none" stroke="${D}" stroke-width="1.6"/>
-      <path d="M-1 9h10" stroke="${D}" stroke-width="1.7" stroke-linecap="round"/>
-    </g>`;
-  }
-  if(name.includes('\uae09\uc5ec')){
-    return `<g transform="translate(43 52)">
-      <rect x="0" y="0" width="15" height="18" rx="3" fill="#FFFFFF" opacity=".9"/>
-      <rect x="3" y="3" width="9" height="3" rx="1" fill="${D}" opacity=".75"/>
-      <circle cx="4" cy="10" r="1.2" fill="${D}"/><circle cx="7.5" cy="10" r="1.2" fill="${D}"/><circle cx="11" cy="10" r="1.2" fill="${D}"/>
-      <circle cx="4" cy="14" r="1.2" fill="${D}"/><circle cx="7.5" cy="14" r="1.2" fill="${D}"/><circle cx="11" cy="14" r="1.2" fill="${D}"/>
-    </g>`;
-  }
-  if(name.includes('\uad50\uc721')){
-    return `<g transform="translate(43 54)">
-      <path d="M-1 0c3.8-2 7-1.1 10 1.2v12.5c-3-2.2-6.2-3.1-10-1.2V0Z" fill="#FFFFFF" opacity=".88"/>
-      <path d="M9 1.2c3-2.3 6.2-3.2 10-1.2v12.5c-3.8-1.9-7-1-10 1.2V1.2Z" fill="#FFFFFF" opacity=".75"/>
-      <path d="M9 1.2v12.5" stroke="${D}" stroke-width="1.4" stroke-linecap="round"/>
-    </g>`;
-  }
-  if(name.includes('\ud329\ud2b8')){
-    return `<g transform="translate(47 55)">
-      <circle cx="0" cy="0" r="5.6" fill="#FFFFFF" opacity=".84" stroke="${D}" stroke-width="2"/>
-      <path d="M4 4l6 6" stroke="${D}" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M-2.7 0l1.8 1.9L3-2.4" fill="none" stroke="${D}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>`;
-  }
-  if(name.includes('\uc2e4\ubb34')){
-    return `<g>
-      <path d="M16.5 27c1.8-8.5 29.2-8.5 31 0H16.5Z" fill="#FFFFFF" opacity=".76"/>
-      <path d="M24 20.8v6.2M32 19.5v7.5M40 20.8v6.2" stroke="${D}" stroke-width="1.6" stroke-linecap="round"/>
-    </g>`;
-  }
-  if(name.includes('\ucd5c\uc885')){
-    return `<g>
-      <path d="M28 56l4 4 4-4 2.6 8.5-6.6 4.7-6.6-4.7L28 56Z" fill="#FFFFFF" opacity=".85"/>
-      <path d="M31 59h2l1.2 5.2L32 66l-2.2-1.8L31 59Z" fill="${D}" opacity=".82"/>
-    </g>`;
-  }
-  return '';
-}
+    def robot_accessory(name, C, D):
+        if '노무' in name:
+            return f'<rect x="17" y="18" width="30" height="9" rx="4.5" fill="#273445"/><rect x="19" y="20" width="26" height="5" rx="2.5" fill="{C}" opacity=".35"/><circle cx="32" cy="14" r="3.5" fill="#273445"/>'
+        if '계약' in name:
+            return f'<path d="M17 23a15 5 0 0 1 30 0" fill="{C}"/><rect x="16" y="21.5" width="32" height="4" rx="2" fill="#273445"/>'
+        if '팩트' in name:
+            return f'<rect x="19" y="15" width="26" height="11" rx="3" fill="#273445"/><rect x="21" y="17.5" width="10" height="2" rx="1" fill="{C}"/><rect x="21" y="21" width="16" height="2" rx="1" fill="{C}" opacity=".5"/>'
+        if '급여' in name:
+            return f'<rect x="25" y="12" width="14" height="14" rx="3" fill="#273445"/><text x="32" y="23" font-size="9" fill="{C}" text-anchor="middle" font-weight="bold">₩</text>'
+        if 'HRM' in name:
+            return f'<rect x="26" y="13" width="12" height="10" rx="5" fill="#273445"/><rect x="28" y="16" width="8" height="4" rx="2" fill="{C}" opacity=".6"/>'
+        if '채용' in name:
+            return f'<path d="M22 23l10-9 10 9" stroke="#273445" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="26" y="16" width="12" height="9" rx="2" fill="{C}" opacity=".4"/>'
+        if '총무' in name:
+            return f'<circle cx="32" cy="17" r="7" fill="#273445"/><circle cx="32" cy="17" r="4" fill="{C}" opacity=".5"/>'
+        if '교육' in name:
+            return f'<rect x="20" y="14" width="24" height="12" rx="3" fill="#273445"/><path d="M24 18h8M24 22h12" stroke="{C}" stroke-width="1.5" stroke-linecap="round"/>'
+        if '실무' in name:
+            return f'<path d="M20 22 Q32 13 44 22" fill="{D}"/><rect x="19" y="21" width="26" height="4" rx="2" fill="#273445"/>'
+        return f'<polygon points="32,10 44,20 40,22 32,14 24,22 20,20" fill="#273445"/><polygon points="32,10 44,20 40,22 32,14 24,22 20,20" fill="{C}" opacity=".4"/>'
 
-function svgRobot(name,sz){
-  const s=sz||56;
-  const c=(COLORS[name]||["#666","#444"]);
-  const C=c[0],D=c[1];
-  const uid='bot'+Array.from(name).reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,11);
-  return `<svg width="${s}" height="${Math.round(s*1.18)}" viewBox="0 0 64 76" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="${uid}-body" x1="13" y1="10" x2="52" y2="67" gradientUnits="userSpaceOnUse">
-        <stop stop-color="${C}"/><stop offset="1" stop-color="${D}"/>
-      </linearGradient>
-      <linearGradient id="${uid}-face" x1="16" y1="21" x2="48" y2="46" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#EEF4FF"/>
-      </linearGradient>
-      <linearGradient id="${uid}-shine" x1="20" y1="17" x2="44" y2="55" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#FFFFFF" stop-opacity=".48"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    <ellipse cx="32" cy="69" rx="21" ry="4.5" fill="#2D241B" opacity=".16"/>
-    <path d="M22 17c0-6.2 20-6.2 20 0" fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="32" cy="10" r="4.7" fill="url(#${uid}-body)" stroke="#fff" stroke-opacity=".72" stroke-width="1.2"/>
-    <rect x="7.5" y="19" width="49" height="37" rx="15" fill="url(#${uid}-body)"/>
-    <path d="M14 23c6-6 27-8 36 5v-2c0-4.5-3.6-8-8-8H22c-4.8 0-8 2.2-8 5Z" fill="url(#${uid}-shine)"/>
-    <circle cx="8" cy="37" r="5.5" fill="${D}"/><circle cx="56" cy="37" r="5.5" fill="${D}"/>
-    <rect x="15" y="25" width="34" height="22" rx="10" fill="url(#${uid}-face)" stroke="rgba(255,255,255,.78)" stroke-width="1.3"/>
-    ${robotFace(name,C,D)}
-    <path d="M19 55h26c7 0 12 5 12 12v1H7v-1c0-7 5-12 12-12Z" fill="url(#${uid}-body)"/>
-    <rect x="23" y="51" width="18" height="10" rx="5" fill="${D}" opacity=".92"/>
-    <circle cx="32" cy="61" r="3.3" fill="#FFFFFF" opacity=".72"/>
-    <path d="M18 60h8M38 60h8" stroke="#FFFFFF" stroke-opacity=".36" stroke-width="2.4" stroke-linecap="round"/>
-    ${robotAccessory(name,C,D)}
-  </svg>`;
-}
+    def svg_robot(name, sz):
+        cols = BOT_COLORS.get(name, ['#888888','#666666'])
+        C, D = cols
+        return (f'<svg width="{sz}" height="{sz}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
+                f'<rect x="13" y="24" width="38" height="30" rx="8" fill="#D4C9B8"/>'
+                f'<rect x="15" y="26" width="34" height="26" rx="7" fill="#E8E0D0"/>'
+                + robot_face(name, C, D)
+                + robot_accessory(name, C, D)
+                + f'<path d="M20 54v6" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
+                f'<path d="M44 54v6" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
+                f'<path d="M9 36h4M51 36h4" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
+                f'</svg>')
 
-function botCard(name,status){
-  const isSkip=status==='skip';
-  const bubble=status==='active'?'<div class="bubble">&#x1F4AC; \ub2f5\ubcc0 \uc911</div>':'';
-  const onclick=isSkip?'':('onclick="showBot(\'' + name + '\')"');
-  return '<div class="bot ' + status + '" ' + onclick + '>'
-    + bubble + svgRobot(name)
-    + '<div class="bot-name">' + name + '</div>'
-    + '<div class="dot"></div></div>';
-}
+    def bot_card(name, status):
+        color = SC.get(status, '#bbb')
+        glow = f'box-shadow:0 0 8px {color};' if status != 'idle' else ''
+        bubble = ('<div style="font-size:9px;background:#fff8e1;border-radius:6px;padding:1px 5px;color:#555;margin-bottom:2px">'
+                  '···</div>') if status == 'active' else ''
+        short = name.replace('제크', '').replace('정리', '')
+        return (f'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 3px;">'
+                + bubble
+                + svg_robot(name, 42)
+                + f'<div style="font-size:8.5px;font-weight:700;color:#2a2520;text-align:center">{short}</div>'
+                + f'<div style="width:7px;height:7px;border-radius:50%;background:{color};{glow}"></div>'
+                + '</div>')
 
-function triggerUpload(){
-  try{
-    const fi=window.parent.document.querySelector('input[data-testid="stFileUploaderDropzoneInput"]');
-    if(fi) fi.click();
-  }catch(e){console.log('upload trigger error',e);}
-}
-function attachUploadHandlers(){
-  const z=document.getElementById('uploadZone');
-  if(!z)return;
-  z.addEventListener('click',function(e){e.stopPropagation();triggerUpload();});
-  z.addEventListener('dragover',function(e){e.preventDefault();z.classList.add('drag-over');});
-  z.addEventListener('dragleave',function(){z.classList.remove('drag-over');});
-  z.addEventListener('drop',function(e){
-    e.preventDefault();z.classList.remove('drag-over');
-    const files=e.dataTransfer.files;
-    if(!files.length)return;
-    try{
-      const dt=new DataTransfer();dt.items.add(files[0]);
-      const fi=window.parent.document.querySelector('input[data-testid="stFileUploaderDropzoneInput"]');
-      if(fi){fi.files=dt.files;fi.dispatchEvent(new Event('change',{bubbles:true}));}
-    }catch(err){console.log('drop error',err);}
-  });
-}
+    def g(n): return statuses.get(n, 'idle')
 
-function render(){
-  const st=DATA.statuses;
-  const g=n=>st[n]||'idle';
-  const topRow=['\ub178\ubb34\ubd07','HRM\ubd07','\ucc44\uc6a9\ubd07','\uacc4\uc57d\ubd07'].map(n=>botCard(n,g(n))).join('');
-  const btmRow=['\ucd1d\ubb34\ubd07','\uae09\uc5ec\ubd07','\uad50\uc721\ubd07'].map(n=>botCard(n,g(n))).join('');
-  const cs=g('\ucd5c\uc885\uc815\ub9ac\ubd07');
-  const cColor={idle:'#bbb',active:'#f5c842',done:'#52c463',error:'#e05555'}[cs]||'#bbb';
-  const cGlow=cs!=='idle'?'box-shadow:0 0 7px '+cColor+';':'';
-  const cBubble=cs==='active'?'<div class="bubble">&#x1F4AC; \ub2f5\ubcc0 \uc911</div>':'';
-  const tableInner=DATA.doc
-    ?'<div class="doc-card" onclick="triggerUpload()">&#x1F4C4; '+DATA.doc+'</div>'
-    :'<div class="upload-zone" id="uploadZone">'
-      +'<div class="upload-plus">+</div>'
-      +'<div class="upload-txt">\ubb38\uc11c \ub4dc\ub798\uadf8 or<br>\ud074\ub9ad\ud574\uc11c \uc5c5\ub85c\ub4dc</div>'
-    +'</div>';
-  const chairHtml=
-    '<div class="chair-col">'
-      +'<div class="chair-wrap" onclick="showBot(\'\ucd5c\uc885\uc815\ub9ac\ubd07\')">'
-        +cBubble+svgRobot('\ucd5c\uc885\uc815\ub9ac\ubd07',44)
-        +'<div class="chair-info">'
-          +'<div class="chair-title">\ucd5c\uc885\uc815\ub9ac\ubd07</div>'
-          +'<div class="chair-sub">\ud68c\uc758 \uc9c4\ud589\uc790</div>'
-        +'</div>'
-        +'<div class="dot" style="background:'+cColor+';'+cGlow+'"></div>'
-      +'</div>'
-    +'</div>';
-  document.getElementById('room').innerHTML=
-    '<div class="conf-wrap">'
-      +'<div class="conf-main">'
-        +'<div class="row">'+topRow+'</div>'
-        +'<div class="mid">'
-          +botCard('\ud329\ud2b8\uccb4\ud06c\ubd07',g('\ud329\ud2b8\uccb4\ud06c\ubd07'))
-          +'<div class="table"><div class="table-lbl">WELLFINE HR AI</div>'+tableInner+'</div>'
-          +botCard('\uc2e4\ubb34\ubd07',g('\uc2e4\ubb34\ubd07'))
-        +'</div>'
-        +'<div class="row">'+btmRow+'</div>'
-      +'</div>'
-      +chairHtml
-    +'</div>';
-  attachUploadHandlers();
-}
+    top_row = ''.join(bot_card(n, g(n)) for n in ['노무봇','HRM봇','채용봇','계약봇'])
+    btm_row = ''.join(bot_card(n, g(n)) for n in ['총무봇','급여봇','교육봇'])
 
-function showBot(name){
-  const result=DATA.results&&DATA.results[name];
-  document.getElementById('modal-icon').innerHTML=svgRobot(name,32);
-  document.getElementById('modal-title').textContent=name;
-  if(result){
-    document.getElementById('modal-body').innerHTML=marked.parse(result);
-  } else {
-    const st2=DATA.statuses[name]||'idle';
-    const msg=st2==='active'?'\uc9c0\uae08 \ub2f5\ubcc0 \uc911\uc785\ub2c8\ub2e4...':'\uc544\uc9c1 \uc758\uacac\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.';
-    document.getElementById('modal-body').innerHTML='<div class="no-result">'+msg+'</div>';
-  }
-  document.getElementById('overlay').classList.add('show');
-}
-function closeModal(){document.getElementById('overlay').classList.remove('show');}
-function maybeClose(e){if(e.target===document.getElementById('overlay'))closeModal();}
-try{render();}catch(e){document.getElementById('room').innerHTML='<pre style="color:red;font-size:11px;padding:8px">JS ERROR: '+e.message+'\n'+e.stack+'</pre>';}
-</script>
-</body></html>""")
+    if doc_name:
+        table_inner = f'<div style="background:rgba(255,255,255,.88);border-radius:4px;padding:3px 10px;font-size:9px;color:#3a2800;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📄 {doc_name}</div>'
+    else:
+        table_inner = '<div style="font-size:9px;color:rgba(255,255,255,.5);text-align:center">대화록 및 문서를 업로드하세요</div>'
+
+    cs = g('최종정리봇')
+    c_color = SC.get(cs, '#bbb')
+    c_glow = f'box-shadow:0 0 7px {c_color};' if cs != 'idle' else ''
+    c_bubble = ('<div style="font-size:9px;background:#fff8e1;border-radius:6px;padding:1px 5px;color:#555;margin-bottom:2px">'
+                '정리 중…</div>') if cs == 'active' else ''
+
+    return (
+        '<div style="background:linear-gradient(180deg,#e8e2d6,#dfd9cd);border-radius:16px;'
+        'padding:16px 8px 14px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;">'
+        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:4px;margin-bottom:4px;">'
+        + top_row + '</div>'
+        '<div style="display:flex;justify-content:center;align-items:center;gap:6px;margin:4px 0;">'
+        + bot_card('팩트체크봇', g('팩트체크봇'))
+        + '<div style="width:270px;min-height:75px;background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);'
+          'border-radius:10px;border:3px solid #4A2E18;box-shadow:0 6px 20px rgba(0,0,0,.4);'
+          'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;">'
+          '<div style="color:rgba(255,255,255,.45);font-size:8px;letter-spacing:2px;text-transform:uppercase;">WELLFINE HR AI</div>'
+        + table_inner + '</div>'
+        + bot_card('실무봇', g('실무봇'))
+        + '</div>'
+        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:4px;margin-top:4px;">'
+        + btm_row + '</div>'
+        '<div style="display:flex;justify-content:center;margin-top:10px;">'
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">'
+        + c_bubble
+        + svg_robot('최종정리봇', 44)
+        + '<div style="font-size:9px;font-weight:700;color:#2a2520">최종정리봇</div>'
+          '<div style="font-size:8px;color:#6b5e4f">회의 진행자</div>'
+        + f'<div style="width:8px;height:8px;border-radius:50%;background:{c_color};{c_glow}"></div>'
+        + '</div></div></div>'
+    )
+
 
 # ── 세션 초기화 ────────────────────────────────────────────
 _cfg = load_cfg()
@@ -756,8 +541,7 @@ with main_col:
     st.divider()
     table_slot = st.empty()
     with table_slot:
-        _h=render_html(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc)
-        components.iframe("data:text/html;base64,"+base64.b64encode(_h.encode()).decode(),height=470,scrolling=False)
+        st.html(render_room(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc))
 
     ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
                              label_visibility="collapsed", key="doc_upload")
@@ -806,8 +590,7 @@ def upd(statuses_update, results_update=None):
     if results_update:
         st.session_state.bot_results.update(results_update)
     with table_slot:
-        _h=render_html(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc)
-        components.iframe("data:text/html;base64,"+base64.b64encode(_h.encode()).decode(),height=490,scrolling=False)
+        st.html(render_room(st.session_state.bot_statuses,st.session_state.bot_results,st.session_state.current_doc))
 
 def check_stop():
     if st.session_state.stop_requested:
