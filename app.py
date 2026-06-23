@@ -166,6 +166,15 @@ def extract_text(f):
             from docx import Document
             d = Document(io.BytesIO(f.read()))
             return "\n".join(p.text for p in d.paragraphs)
+        elif ext in ("pptx", "ppt"):
+            from pptx import Presentation
+            prs = Presentation(io.BytesIO(f.read()))
+            texts = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text.strip():
+                        texts.append(shape.text.strip())
+            return "\n".join(texts)
     except Exception as e:
         return f"[파일 오류: {e}]"
     return ""
@@ -369,7 +378,7 @@ function render(){
       +'<div class="conf-main">'
         +'<div class="row">'+topRow+'</div>'
         +'<div class="mid">'
-          +botCard('\\ud31d\\ud2b8\\uccb4\\ud06c\\ubd07',g('\\ud31d\\ud2b8\\uccb4\\ud06c\\ubd07'))
+          +botCard('\\ud329\\ud2b8\\uccb4\\ud06c\\ubd07',g('\\ud329\\ud2b8\\uccb4\\ud06c\\ubd07'))
           +'<div class="table"><div class="table-lbl">WELLFINE HR AI</div>'+tableInner+'</div>'
           +botCard('\\uc2e4\\ubb34\\ubd07',g('\\uc2e4\\ubb34\\ubd07'))
         +'</div>'
@@ -574,7 +583,7 @@ with main_col:
 
     # 숨겨진 파일 업로더 (테이블 JS가 트리거)
     ufile = st.file_uploader(
-        "문서", type=["pdf", "docx", "txt"],
+        "문서", type=["pdf", "docx", "txt", "pptx"],
         label_visibility="collapsed", key="doc_upload")
     if ufile:
         if st.session_state.current_doc != ufile.name:
@@ -735,13 +744,14 @@ if go:
               + "\n\n".join(f"{n}:\n{o}" for n, o in ops2.items())
               + f"\n\n[1차 팩트체크]\n{fc1}")
     upd({"팩트체크봇": "active"})
-    with st.status("🤖 팩트체크봇 최종 검증 중...",
+    upd({"팩트체크봇": "active"})
+    with st.status("\U0001f916 팩트체크봇 정 검증 중...",
                    expanded=False) as stat:
         fc2 = call_bot(_pkey, _api_key, _model,
                        bp.get("팩트체크봇", FACTCHECK_SYS),
                        fc2_in, 900)
         st.markdown(fc2)
-        stat.update(label="🤖 팩트체크봇 최종 ✅",
+        stat.update(label="\U0001f916 팩트체크봇 최종 ✅",
                     state="complete", expanded=False)
     upd({"팩트체크봇": "done"}, {"팩트체크봇_2차": fc2})
 
@@ -749,26 +759,25 @@ if go:
 
     # 실무봇
     upd({"실무봇": "active"})
-    field_in = (content
-                + "\n\n[전문 봇 최종 의견]\n"
-                + "\n".join(f"{n}: {o[:200]}" for n, o in ops2.items())
-                + f"\n\n[팩트체크 최종]\n{fc2}"
-                + "\n\n현장 실무 관점에서 3줄 "
-                  "이내로 핵심 코멘트만 작성해주세요.")
-    with st.spinner("🤖 실무봇 코멘트 작성 중..."):
+    field_in = content
+    field_in += "\n\n[전문 봇 최종 의견]\n"
+    field_in += "\n".join(f"{n}: {o[:200]}" for n, o in ops2.items())
+    field_in += f"\n\n[팩트체크 최종]\n{fc2}"
+    field_in += "\n\n현장 실무 관점에서 3줄 이내로 핵심 코멘트만 작성해주세요."
+    with st.spinner("\U0001f916 실무봇 코멘트 작성 중..."):
         field_brief = call_bot(_pkey, _api_key, _model,
                                bp.get("실무봇", FIELD_SYS),
                                field_in, 200)
     upd({"실무봇": "done"}, {"실무봇": field_brief})
 
     # 최종정리봇
-    final_in = (content
-                + "\n\n[전문 봇 2차 최종 의견]\n"
-                + "\n\n".join(f"{n}:\n{o}" for n, o in ops2.items())
-                + f"\n\n[팩트체크 최종 결과]\n{fc2}"
-                + f"\n\n[실무 현장 코멘트]\n{field_brief}")
+    final_in = content
+    final_in += "\n\n[전문 봇 2차 최종 의견]\n"
+    final_in += "\n\n".join(f"{n}:\n{o}" for n, o in ops2.items())
+    final_in += f"\n\n[팩트체크 최종 결과]\n{fc2}"
+    final_in += f"\n\n[실무 현장 코멘트]\n{field_brief}"
     upd({"최종정리봇": "active"})
-    with st.spinner("🤖 최종정리봇 정리 중..."):
+    with st.spinner("\U0001f916 최종정리봇 정리 중..."):
         final_res = call_bot(_pkey, _api_key, _model,
                              bp.get("최종정리봇", FINAL_SYS),
                              final_in, 1500)
