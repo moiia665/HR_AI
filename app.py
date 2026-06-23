@@ -1,9 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import io, os, json, re
+import io, os, json, re, base64
 from concurrent.futures import ThreadPoolExecutor
 
-st.set_page_config(page_title="웹라인 AI 회의실", page_icon="🤖", layout="wide",
+st.set_page_config(page_title="웰파인 AI 회의실", page_icon="🤖", layout="wide",
                    initial_sidebar_state="expanded")
 
 CFG_FILE = "wellfine_config.json"
@@ -45,7 +45,7 @@ st.markdown("""
 <style>
 [data-testid="stAppViewContainer"]{background:#f5f1eb;}
 [data-testid="stHeader"]{background:transparent;}
-[data-testid="stSidebar"]{background:#f3efe8; min-width:290px;}
+[data-testid="stSidebar"]{background:#f3efe8; }
 [data-testid="stSidebarContent"]{padding:14px 10px 16px;}
 #MainMenu,footer{visibility:hidden;}
 [data-testid="stFileUploader"]{
@@ -89,17 +89,17 @@ PROVIDERS = {
 }
 
 BOTS = [
-    {"name": "노무봇",  "system": "웹라인(강원도 횟성 건강기능식품 OEM/ODM) 인사총무팀 노무 전문 AI.\n성격: 보수적이고 까다로운 노무사 스타일.\n- 법 조문 근거 없이 괴다고 하지 마세요\n- 애매하면 반드시 전문가 확인 필요 명시\n- 에 노동관련 법령 관점으로 검토\n- 핵심 포인트 번호 목록으로 제시"},
-    {"name": "HRM봇",  "system": "웹라인 인사총무팀 HRM 전문 AI.\n성격: 원칙주의자.\n- 사내 규정, 취업규칙과의 일치 여부 체크\n- 규정과 실제 운영 간의 괴리를 찾아내세요\n- 형평성 체크\n- 핵심 포인트 번호 목록으로 제시"},
-    {"name": "채용봇",  "system": "웹라인 인사총무팀 채용 전문 AI.\n성격: 현실주의자.\n- 강원도 횟성 지역의 지원자 풀이 제한적임 감안\n- JD의 모호한/차별적 표현 찾아내세요\n- 채용 과정의 법적 문제 체크\n- 핵심 포인트 번호 목록으로 제시"},
-    {"name": "계약봇",  "system": "웹라인 인사총무팀 계약 전문 AI.\n성격: 의심 많은 변호사 스타일.\n- 계약서 조항 꼼꼼하게 분석\n- 불리한 조항/모호한 표현 찾아내세요\n- 해지/갱신 조항 리스크 집중 체크\n- 핵심 포인트 번호 목록으로 제시"},
-    {"name": "총무봇",  "system": "웹라인 인사총무팀 총무 전문 AI.\n성격: 꼼꼼한 살림꼼.\n- 비용 처리, 시설, 물품 관련 규정 준수 체크\n- 세무적으로 문제없는지 검토\n- 내부 결재/승인 프로세스 확인\n- 핵심 포인트 번호 목록으로 제시"},
-    {"name": "급여봇",  "system": "웹라인 인사총무팀 급여/4대보험 전문 AI.\n성격: 숫자에 목숙 거는 스타일.\n- 급여 계산과 공제 항목 정확성 체크\n- 4대보험 요율과 신고 기한 확인\n- E-9 비자 외국인 근로자의 특수한 처리 체크\n- 핵심 포인트 번호 목록으로 제시"},
-    {"name": "교육봇",  "system": "웹라인 인사총무팀 교육/OJT 전문 AI.\n성격: 실용주의 교육자.\n- 교육 내용이 실제 업무와 연결되는지 체크\n- OJT/수습평가 설계의 공정성 확인\n- 외국인 근로자 교육 시 언어/문화 차이 고려\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "노무봇",  "system": "웰파인(강원도 횡성 건강기능식품 OEM/ODM) 인사총무팀 노무 전문 AI.\n성격: 보수적이고 까다로운 노무사 스타일.\n- 법 조문 근거 없이 괴다고 하지 마세요\n- 애매하면 반드시 전문가 확인 필요 명시\n- 에 노동관련 법령 관점으로 검토\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "HRM봇",  "system": "웰파인 인사총무팀 HRM 전문 AI.\n성격: 원칙주의자.\n- 사내 규정, 취업규칙과의 일치 여부 체크\n- 규정과 실제 운영 간의 괴리를 찾아내세요\n- 형평성 체크\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "채용봇",  "system": "웰파인 인사총무팀 채용 전문 AI.\n성격: 현실주의자.\n- 강원도 횡성 지역의 지원자 풀이 제한적임 감안\n- JD의 모호한/차별적 표현 찾아내세요\n- 채용 과정의 법적 문제 체크\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "계약봇",  "system": "웰파인 인사총무팀 계약 전문 AI.\n성격: 의심 많은 변호사 스타일.\n- 계약서 조항 꼼꼼하게 분석\n- 불리한 조항/모호한 표현 찾아내세요\n- 해지/갱신 조항 리스크 집중 체크\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "총무봇",  "system": "웰파인 인사총무팀 총무 전문 AI.\n성격: 꼼꼼한 살림꼼.\n- 비용 처리, 시설, 물품 관련 규정 준수 체크\n- 세무적으로 문제없는지 검토\n- 내부 결재/승인 프로세스 확인\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "급여봇",  "system": "웰파인 인사총무팀 급여/4대보험 전문 AI.\n성격: 숫자에 목숙 거는 스타일.\n- 급여 계산과 공제 항목 정확성 체크\n- 4대보험 요율과 신고 기한 확인\n- E-9 비자 외국인 근로자의 특수한 처리 체크\n- 핵심 포인트 번호 목록으로 제시"},
+    {"name": "교육봇",  "system": "웰파인 인사총무팀 교육/OJT 전문 AI.\n성격: 실용주의 교육자.\n- 교육 내용이 실제 업무와 연결되는지 체크\n- OJT/수습평가 설계의 공정성 확인\n- 외국인 근로자 교육 시 언어/문화 차이 고려\n- 핵심 포인트 번호 목록으로 제시"},
 ]
 
 FACTCHECK_SYS = (
-    "웹라인 인사총무팀 팩트체크 AI. 감정 없는 검사 스타일.\n\n"
+    "웰파인 인사총무팀 팩트체크 AI. 감정 없는 검사 스타일.\n\n"
     "반드시 아래 실제 법령/규정 기준으로 검증하세요:\n"
     "- 근로기준법\n- 최저임금법\n- 근로자퇴직급여보장법\n"
     "- 고용보험법 / 산재보험법 / 국민연금법 / 국민건강보험법\n"
@@ -109,15 +109,15 @@ FACTCHECK_SYS = (
 )
 
 FIELD_SYS = (
-    "웹라인 인사총무팀 실무 전문 AI. 성격: 현장 경험 많은 선배.\n"
+    "웰파인 인사총무팀 실무 전문 AI. 성격: 현장 경험 많은 선배.\n"
     "- '이론은 맞는데 실제로 가능해?' 관점으로 접근\n"
     "- 직원 입장에서 이 결정을 받아들일 수 있는지 시뮬레이션\n"
-    "- 강원도 횟성 제조업 현장 특성 감안\n"
+    "- 강원도 횡성 제조업 현장 특성 감안\n"
     "- 현실적으로 실행 가능한 방향 제시"
 )
 
 FINAL_SYS = (
-    "웹라인 인사총무팀 AI 회의 최종 정리 AI. 냉철한 회의 진행자.\n"
+    "웰파인 인사총무팀 AI 회의 최종 정리 AI. 냉철한 회의 진행자.\n"
     "- 모든 봇 의견 종합해 결론 도출\n"
     "- 의견 충돌한 부분은 양쪽 모두 명시\n"
     "- 구체적 액션 아이템을 우선순위 순서로 제시\n"
@@ -127,7 +127,7 @@ FINAL_SYS = (
 )
 
 SCREEN_SYS = (
-    "웹라인 HR AI 회의 코디네이터. 이번 안건과 관련 있는 봇만 골라주세요.\n\n"
+    "웰파인 HR AI 회의 코디네이터. 이번 안건과 관련 있는 봇만 골라주세요.\n\n"
     "봇 전문 영역:\n"
     "- 노무봇: 근로기준법, 수습/해고/징계, 근로시간, 퇴직, 실업급여, 노동 법령\n"
     "- HRM봇: 인사관리, 사내규정, 취업규칙, 인사제도, 평가\n"
@@ -141,7 +141,7 @@ SCREEN_SYS = (
 )
 
 MEMORY_SYS = (
-    "웹라인 HR 회의 요약 AI. "
+    "웰파인 HR 회의 요약 AI. "
     "이번 회의에서 향후 참고할 핵심 사항 2-3줄로만 요약. "
     "날짜 불필요. 간결하게."
 )
@@ -215,7 +215,7 @@ def extract_text(f):
 def build_content(doc_text, question, case_notes):
     parts = []
     if case_notes.strip():
-        parts.append("[웹라인 누적 케이스]\n" + case_notes.strip())
+        parts.append("[웰파인 누적 케이스]\n" + case_notes.strip())
     if doc_text.strip():
         parts.append("[문서]\n" + doc_text[:3000])
     if question.strip():
@@ -228,7 +228,7 @@ def render_html(statuses, results, doc_name=""):
                             "colors": BOT_COLORS, "doc": doc_name}, ensure_ascii=False)
     return ("""<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js" defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#f5f1eb;font-family:-apple-system,sans-serif;padding:8px;}
@@ -745,7 +745,7 @@ else:
 with main_col:
     col_title, col_cfg = st.columns([5, 1])
     with col_title:
-        st.markdown("## 🏢 웹라인 인사총무 AI 회의실")
+        st.markdown("## 🏢 웰파인 인사총무 AI 회의실")
         api_status = " ✅" if _api_key else " ⚠️ API키 미입력"
         st.caption(f"설정: {_p.split()[-1]} · {_ml}" + api_status)
     with col_cfg:
@@ -756,11 +756,8 @@ with main_col:
     st.divider()
     table_slot = st.empty()
     with table_slot:
-        components.html(
-            render_html(st.session_state.bot_statuses,
-                        st.session_state.bot_results,
-                        st.session_state.current_doc),
-            height=470)
+        _h = render_html(st.session_state.bot_statuses, st.session_state.bot_results, st.session_state.current_doc)
+        components.iframe("data:text/html;base64," + base64.b64encode(_h.encode()).decode(), height=470)
 
     ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
                              label_visibility="collapsed", key="doc_upload")
@@ -809,11 +806,8 @@ def upd(statuses_update, results_update=None):
     if results_update:
         st.session_state.bot_results.update(results_update)
     with table_slot:
-        components.html(
-            render_html(st.session_state.bot_statuses,
-                        st.session_state.bot_results,
-                        st.session_state.current_doc),
-            height=490)
+        _h = render_html(st.session_state.bot_statuses, st.session_state.bot_results, st.session_state.current_doc)
+        components.iframe("data:text/html;base64," + base64.b64encode(_h.encode()).decode(), height=490)
 
 def check_stop():
     if st.session_state.stop_requested:
