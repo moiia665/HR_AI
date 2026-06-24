@@ -426,7 +426,6 @@ def render_room(statuses, results, doc_name=""):
         + '<div style="width:320px;min-height:92px;background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);'
           'border-radius:10px;border:3px solid #4A2E18;box-shadow:0 6px 20px rgba(0,0,0,.4);'
           'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;">'
-          '<div style="color:rgba(255,255,255,.45);font-size:8px;letter-spacing:2px;text-transform:uppercase;">HR TEAM AI AGENTS</div>'
         + table_inner + '</div>'
         + bot_card('실무봇', g('실무봇'))
         + '</div>'
@@ -668,24 +667,24 @@ with main_col:
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:280px; margin:-214px auto 8px auto; position:relative; z-index:50;
+        width:260px; margin:-236px auto -6px auto; position:relative; z-index:50;
     }
     [data-testid="stFileUploader"] label{
         color:#fff5e1 !important; font-weight:700; font-size:11px;
-        width:100%; justify-content:center; text-align:center; margin-bottom:2px;
+        width:100%; justify-content:center; text-align:center; margin-bottom:3px;
     }
     [data-testid="stFileUploaderDropzone"]{
-        background:rgba(0,0,0,.14) !important;
-        border:1.5px dashed rgba(255,245,225,.8) !important;
-        border-radius:10px; min-height:0 !important; padding:6px 8px !important;
+        background:rgba(0,0,0,.16) !important;
+        border:1.5px dashed rgba(255,245,225,.85) !important;
+        border-radius:10px; min-height:0 !important; padding:4px 8px !important;
         display:flex; justify-content:center; align-items:center;
     }
     [data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffe6ad !important; }
     [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
-    [data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
-    [data-testid="stFileUploaderDropzone"] button{
-        background:rgba(255,255,255,.95) !important; color:#5a3d22 !important;
-        border:none !important; font-weight:700; margin:0 !important;
+    [data-testid="stFileUploaderDropzone"] button,
+    [data-testid="stFileUploaderDropzone"] button *{
+        background:#fff7ec !important; color:#5a3d22 !important;
+        border:none !important; font-weight:700; margin:0 auto !important;
     }
     </style>
     """, unsafe_allow_html=True)
