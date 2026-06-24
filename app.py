@@ -663,28 +663,29 @@ with main_col:
             height=360,
         )
 
-    # 업로더를 회의 테이블 위로 겹쳐 올림(흰 글자·투명 배경) — 클릭/드래그 작동.
-    # 테이블과 위아래로 어긋나면 아래 margin 첫 값(-228px)만 조정하세요.
+    # 업로더를 회의 테이블 위로 겹쳐 올림. 드롭존은 section 태그라 div 한정 셀렉터 금지.
+    # 안내문(200MB...)은 숨겨 컴팩트하게. 테이블과 어긋나면 margin 첫 값(-214px)만 조정.
     st.markdown("""
     <style>
-    div[data-testid="stFileUploader"]{
-        width:300px; margin:-228px auto 6px auto; position:relative; z-index:50;
+    [data-testid="stFileUploader"]{
+        width:280px; margin:-214px auto 8px auto; position:relative; z-index:50;
     }
-    div[data-testid="stFileUploader"] label{
-        color:#fff5e1 !important; font-weight:700; font-size:11.5px;
-        width:100%; justify-content:center; text-align:center;
+    [data-testid="stFileUploader"] label{
+        color:#fff5e1 !important; font-weight:700; font-size:11px;
+        width:100%; justify-content:center; text-align:center; margin-bottom:2px;
     }
-    div[data-testid="stFileUploaderDropzone"]{
-        background:rgba(255,255,255,.10); border:2px dashed rgba(255,245,225,.7);
-        border-radius:10px; min-height:48px; padding:5px 10px;
+    [data-testid="stFileUploaderDropzone"]{
+        background:rgba(0,0,0,.14) !important;
+        border:1.5px dashed rgba(255,245,225,.8) !important;
+        border-radius:10px; min-height:0 !important; padding:6px 8px !important;
+        display:flex; justify-content:center; align-items:center;
     }
-    div[data-testid="stFileUploaderDropzone"]:hover{
-        border-color:#ffe6ad; background:rgba(255,255,255,.20);
-    }
-    div[data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
-    div[data-testid="stFileUploaderDropzone"] button{
-        background:rgba(255,255,255,.92) !important; color:#5a3d22 !important;
-        border:none !important; font-weight:700;
+    [data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffe6ad !important; }
+    [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
+    [data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
+    [data-testid="stFileUploaderDropzone"] button{
+        background:rgba(255,255,255,.95) !important; color:#5a3d22 !important;
+        border:none !important; font-weight:700; margin:0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
