@@ -270,6 +270,14 @@ def build_partial_summary(results):
 def render_room(statuses, results, doc_name=""):
     SC = {'idle':'#bbb','active':'#f5c842','done':'#52c463','error':'#e05555'}
 
+    # 말풍선 모달용 발언 데이터 (results 그대로 사용, 팩트체크봇은 최신 키로 매핑)
+    _speech = dict(results or {})
+    if '팩트체크봇_2차' in _speech:
+        _speech['팩트체크봇'] = _speech['팩트체크봇_2차']
+    elif '팩트체크봇_1차' in _speech:
+        _speech['팩트체크봇'] = _speech['팩트체크봇_1차']
+    _speech_json = json.dumps(_speech, ensure_ascii=False)
+
     def robot_face(name, C, D):
         if '노무' in name:
             return f'<path d="M21 31l8 2.4M43 31l-8 2.4" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><circle cx="25" cy="37" r="3.6" fill="{C}"/><circle cx="39" cy="37" r="3.6" fill="{C}"/><path d="M28.5 44.5h7" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/>'
@@ -331,8 +339,11 @@ def render_room(statuses, results, doc_name=""):
     def bot_card(name, status):
         color = SC.get(status, '#bbb')
         glow = f'box-shadow:0 0 8px {color};' if status != 'idle' else ''
-        bubble = ('<div style="font-size:9px;background:#fff8e1;border-radius:6px;padding:1px 5px;color:#555;margin-bottom:2px">'
-                  '···</div>') if status == 'active' else ''
+        bubble = (f'<div onclick="wfShowSpeech(\'{name}\')" '
+                  'style="cursor:pointer;font-size:9px;font-weight:700;background:#fff8e1;'
+                  'border:1px solid #f0d98a;border-radius:9px;padding:2px 7px;color:#8a6500;'
+                  'margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);'
+                  'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언중</div>') if status == 'active' else ''
         short = name.replace('제크', '').replace('정리', '')
         return (f'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
                 + bubble
@@ -354,8 +365,11 @@ def render_room(statuses, results, doc_name=""):
     cs = g('최종정리봇')
     c_color = SC.get(cs, '#bbb')
     c_glow = f'box-shadow:0 0 7px {c_color};' if cs != 'idle' else ''
-    c_bubble = ('<div style="font-size:9px;background:#fff8e1;border-radius:6px;padding:1px 5px;color:#555;margin-bottom:2px">'
-                '정리 중…</div>') if cs == 'active' else ''
+    c_bubble = ('<div onclick="wfShowSpeech(\'최종정리봇\')" '
+                'style="cursor:pointer;font-size:9px;font-weight:700;background:#fff8e1;'
+                'border:1px solid #f0d98a;border-radius:9px;padding:2px 7px;color:#8a6500;'
+                'margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);'
+                'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언중</div>') if cs == 'active' else ''
 
     podium = (
         '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;'
@@ -374,6 +388,34 @@ def render_room(statuses, results, doc_name=""):
           '<div style="font-size:9px;color:#6b5e4f">회의 진행자</div>'
         + f'<div style="width:8px;height:8px;border-radius:50%;background:{c_color};{c_glow}"></div>'
         + '</div></div>'
+    )
+
+    # 말풍선 클릭 시 뜨는 모달 + 애니메이션 (iframe 내부 자체 완결)
+    _modal_html = (
+        '<style>@keyframes wfBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}</style>'
+        '<div id="wfModal" onclick="if(event.target===this)this.style.display=\'none\'" '
+        'style="display:none;position:fixed;inset:0;background:rgba(25,18,10,.5);z-index:99999;'
+        'align-items:center;justify-content:center;padding:14px;box-sizing:border-box;'
+        'font-family:-apple-system,sans-serif;">'
+        '<div style="background:#fffdf7;max-width:460px;width:100%;max-height:86%;overflow:auto;'
+        'border-radius:14px;padding:16px 18px;box-shadow:0 14px 44px rgba(0,0,0,.4);border:1px solid #e6dcc8;">'
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+        '<div id="wfModalTitle" style="font-size:14px;font-weight:800;color:#2a2520;"></div>'
+        '<div onclick="document.getElementById(\'wfModal\').style.display=\'none\'" '
+        'style="cursor:pointer;font-size:20px;color:#9a8b76;line-height:1;padding:0 4px;">×</div>'
+        '</div>'
+        '<div id="wfModalBody" style="font-size:12.5px;line-height:1.65;color:#3a342c;'
+        'white-space:pre-wrap;word-break:break-word;"></div>'
+        '</div></div>'
+        '<script>'
+        'var WF_SPEECH=' + _speech_json + ';'
+        'function wfShowSpeech(n){'
+        'document.getElementById("wfModalTitle").textContent="\U0001F4AC "+n+" 발언";'
+        'var t=WF_SPEECH[n];'
+        'document.getElementById("wfModalBody").textContent=(t&&(""+t).trim())?t:"아직 이 봇의 발언 내용이 도착하지 않았습니다.";'
+        'document.getElementById("wfModal").style.display="flex";'
+        '}'
+        '</script>'
     )
 
     return (
@@ -397,6 +439,7 @@ def render_room(statuses, results, doc_name=""):
         + '</div>'
         + podium
         + '</div></div>'
+        + _modal_html
     )
 
 
@@ -623,6 +666,31 @@ with main_col:
                         st.session_state.current_doc),
             height=440,
         )
+
+    # 회의 테이블 중앙에 문서 업로더를 올려놓는 오버레이 스타일
+    # (회의실 위치가 어긋나면 아래 margin-top 값만 조정하면 됩니다)
+    st.markdown("""
+    <style>
+    div[data-testid="stFileUploader"]{
+        width:300px; margin:-236px auto 50px auto; position:relative; z-index:30;
+    }
+    div[data-testid="stFileUploader"] > label{ display:none; }
+    div[data-testid="stFileUploaderDropzone"]{
+        background:rgba(74,46,24,.10);
+        border:1.5px dashed rgba(255,245,225,.6);
+        border-radius:10px; min-height:70px; padding:6px 10px;
+    }
+    div[data-testid="stFileUploaderDropzone"]:hover{
+        border-color:#ffd98a; background:rgba(74,46,24,.28);
+    }
+    div[data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
+    div[data-testid="stFileUploaderDropzone"] small{ color:rgba(255,245,225,.75) !important; }
+    div[data-testid="stFileUploaderDropzone"] button{
+        background:rgba(255,255,255,.92) !important; color:#5a3d22 !important;
+        border:none !important; font-weight:700;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
                              label_visibility="collapsed", key="doc_upload")
@@ -872,3 +940,4 @@ if go:
 
     st.success("✅ 회의 완료! 오른쪽에 최종 결론이 표시됩니다.")
     st.rerun()
+# end of app
