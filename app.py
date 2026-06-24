@@ -667,16 +667,17 @@ with main_col:
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:210px; margin:-244px auto -40px auto; position:relative; z-index:50;
+        width:200px; margin:-250px auto -40px auto; position:relative; z-index:50;
     }
     [data-testid="stFileUploader"] label{
-        color:#fff5e1 !important; font-weight:700; font-size:11px;
-        width:100%; justify-content:center; text-align:center; margin-bottom:3px;
+        color:#fff5e1 !important; font-weight:700; font-size:10px;
+        width:100%; justify-content:center; text-align:center; margin-bottom:1px !important;
     }
     [data-testid="stFileUploaderDropzone"]{
         background:rgba(0,0,0,.16) !important;
         border:1.5px dashed rgba(255,245,225,.85) !important;
-        border-radius:10px; min-height:0 !important; padding:4px 8px !important;
+        border-radius:9px; min-height:0 !important; height:38px !important;
+        padding:2px 6px !important;
         display:flex; justify-content:center; align-items:center;
     }
     [data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffe6ad !important; }
