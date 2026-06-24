@@ -356,7 +356,7 @@ def render_room(statuses, results, doc_name=""):
     if doc_name:
         table_inner = f'<div style="background:rgba(255,255,255,.88);border-radius:4px;padding:3px 10px;font-size:9px;color:#3a2800;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📄 {doc_name}</div>'
     else:
-        table_inner = '<div style="font-size:9px;color:rgba(255,255,255,.55);text-align:center">📄 문서를 올려주세요 ↓</div>'
+        table_inner = '<div style="height:46px"></div>'
 
     cs = g('최종정리봇')
     c_color = SC.get(cs, '#bbb')
@@ -660,22 +660,36 @@ with main_col:
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=330,
+            height=360,
         )
 
-    # 회의실 바로 아래 문서 업로더 — 순정 위젯이라 클릭/드래그가 확실히 작동
-    # (테두리만 살짝 갈색으로. 내부 요소는 절대 건드리지 않음 = 클릭 동작 보존)
+    # 업로더를 회의 테이블 위로 겹쳐 올림(흰 글자·투명 배경) — 클릭/드래그 작동.
+    # 테이블과 위아래로 어긋나면 아래 margin 첫 값(-228px)만 조정하세요.
     st.markdown("""
     <style>
-    div[data-testid="stFileUploader"]{ max-width:440px; margin:2px auto 4px auto; }
-    div[data-testid="stFileUploaderDropzone"]{
-        border:2px dashed #8B5E3C; border-radius:10px; background:#faf6ee;
+    div[data-testid="stFileUploader"]{
+        width:300px; margin:-228px auto 6px auto; position:relative; z-index:50;
     }
-    div[data-testid="stFileUploaderDropzone"]:hover{ border-color:#6B4423; background:#f2e9da; }
+    div[data-testid="stFileUploader"] label{
+        color:#fff5e1 !important; font-weight:700; font-size:11.5px;
+        width:100%; justify-content:center; text-align:center;
+    }
+    div[data-testid="stFileUploaderDropzone"]{
+        background:rgba(255,255,255,.10); border:2px dashed rgba(255,245,225,.7);
+        border-radius:10px; min-height:48px; padding:5px 10px;
+    }
+    div[data-testid="stFileUploaderDropzone"]:hover{
+        border-color:#ffe6ad; background:rgba(255,255,255,.20);
+    }
+    div[data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
+    div[data-testid="stFileUploaderDropzone"] button{
+        background:rgba(255,255,255,.92) !important; color:#5a3d22 !important;
+        border:none !important; font-weight:700;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    ufile = st.file_uploader("📄 회의 문서 업로드 — 클릭하거나 파일을 끌어다 놓으세요",
+    ufile = st.file_uploader("📄 클릭 또는 드래그하여 업로드",
                              type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
     if ufile:
         if st.session_state.current_doc != ufile.name:
@@ -729,7 +743,7 @@ def upd(statuses_update, results_update=None):
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=330,
+            height=360,
         )
 
 def check_stop():
