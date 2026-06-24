@@ -667,7 +667,7 @@ with main_col:
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:260px; margin:-236px auto -6px auto; position:relative; z-index:50;
+        width:210px; margin:-244px auto -40px auto; position:relative; z-index:50;
     }
     [data-testid="stFileUploader"] label{
         color:#fff5e1 !important; font-weight:700; font-size:11px;
