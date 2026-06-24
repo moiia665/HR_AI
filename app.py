@@ -272,7 +272,21 @@ def render_room(statuses, results, doc_name=""):
         _speech['팩트체크봇'] = _speech['팩트체크봇_2차']
     elif '팩트체크봇_1차' in _speech:
         _speech['팩트체크봇'] = _speech['팩트체크봇_1차']
-    _speech_json = json.dumps(_speech, ensure_ascii=False)
+    _hints = {
+        "노무봇": "노동법, 근로조건, 징계/해고, 임금 리스크를 검토하는 중입니다.",
+        "HRM봇": "취업규칙, 사내 규정, 형평성, 운영 기준을 맞춰보는 중입니다.",
+        "채용봇": "채용 절차, JD 표현, 차별 소지, 지역 채용 현실성을 보는 중입니다.",
+        "계약봇": "계약 조항의 모호함, 불리한 조건, 해지/갱신 리스크를 확인하는 중입니다.",
+        "총무봇": "비용, 시설, 물품, 내부 승인 절차 관점으로 검토하는 중입니다.",
+        "급여봇": "급여 계산, 공제, 4대보험, 신고 기한을 확인하는 중입니다.",
+        "교육봇": "OJT, 수습평가, 교육 실효성과 공정성을 보는 중입니다.",
+        "팩트체크봇": "앞선 발언의 사실관계와 법적 근거를 다시 확인하는 중입니다.",
+        "실무봇": "현장에서 실제로 실행 가능한 대응안으로 정리하는 중입니다.",
+        "최종정리봇": "오른쪽 연단에서 각 봇 발언을 종합해 최종 결론을 정리하는 중입니다.",
+    }
+    _speech_json = json.dumps(_speech, ensure_ascii=False).replace("</", "<\\/")
+    _status_json = json.dumps(statuses or {}, ensure_ascii=False).replace("</", "<\\/")
+    _hint_json = json.dumps(_hints, ensure_ascii=False).replace("</", "<\\/")
 
     def robot_face(name, C, D):
         if '노무' in name:
@@ -298,6 +312,8 @@ def render_room(statuses, results, doc_name=""):
     def robot_accessory(name, C, D):
         if '노무' in name:
             return f'<rect x="17" y="18" width="30" height="9" rx="4.5" fill="#273445"/><rect x="19" y="20" width="26" height="5" rx="2.5" fill="{C}" opacity=".35"/><circle cx="32" cy="14" r="3.5" fill="#273445"/>'
+        if '최종' in name:
+            return f'<rect x="28" y="10" width="8" height="15" rx="4" fill="#273445"/><circle cx="32" cy="8" r="3.2" fill="{C}"/><path d="M24 22h16" stroke="#273445" stroke-width="2.4" stroke-linecap="round"/>'
         if '계약' in name:
             return f'<path d="M17 23a15 5 0 0 1 30 0" fill="{C}"/><rect x="16" y="21.5" width="32" height="4" rx="2" fill="#273445"/>'
         if '팩트' in name:
@@ -316,6 +332,29 @@ def render_room(statuses, results, doc_name=""):
             return f'<path d="M20 22 Q32 13 44 22" fill="{D}"/><rect x="19" y="21" width="26" height="4" rx="2" fill="#273445"/>'
         return f'<polygon points="32,10 44,20 40,22 32,14 24,22 20,20" fill="#273445"/><polygon points="32,10 44,20 40,22 32,14 24,22 20,20" fill="{C}" opacity=".4"/>'
 
+    def robot_tool(name, C, D):
+        if '노무' in name:
+            return f'<g transform="translate(43 12) rotate(-22)"><rect x="0" y="0" width="14" height="5" rx="1.5" fill="#273445"/><path d="M6 5l8 13" stroke="{D}" stroke-width="2.3" stroke-linecap="round"/></g>'
+        if 'HRM' in name:
+            return f'<g transform="translate(43 17)"><rect x="0" y="0" width="12" height="17" rx="2" fill="#273445"/><path d="M3 5h6M3 9h6M3 13h4" stroke="{C}" stroke-width="1.4" stroke-linecap="round"/></g>'
+        if '채용' in name:
+            return f'<g transform="translate(43 13)"><circle cx="6" cy="6" r="5" fill="none" stroke="#273445" stroke-width="2.2"/><path d="M10 10l6 6" stroke="{D}" stroke-width="2.4" stroke-linecap="round"/><circle cx="6" cy="5" r="1.7" fill="{C}"/></g>'
+        if '계약' in name:
+            return f'<g transform="translate(44 16)"><rect x="0" y="0" width="12" height="16" rx="2" fill="#fffdf7" stroke="#273445" stroke-width="1.6"/><path d="M3 5h6M3 9h5M8 14l5-5" stroke="{D}" stroke-width="1.5" stroke-linecap="round"/></g>'
+        if '총무' in name:
+            return f'<g transform="translate(43 15)"><circle cx="7" cy="7" r="6" fill="none" stroke="#273445" stroke-width="2.2"/><circle cx="7" cy="7" r="2.4" fill="{C}"/><path d="M7 -1v3M7 12v3M-1 7h3M12 7h3" stroke="#273445" stroke-width="1.8" stroke-linecap="round"/></g>'
+        if '급여' in name:
+            return f'<g transform="translate(43 14)"><rect x="0" y="0" width="13" height="16" rx="2" fill="#273445"/><path d="M3 5h7M3 9h2M7 9h3M3 13h2M7 13h3" stroke="{C}" stroke-width="1.3" stroke-linecap="round"/></g>'
+        if '교육' in name:
+            return f'<g transform="translate(42 16)"><path d="M1 2h8c2 0 4 1.5 4 3.8V16H5c-2.4 0-4-1.4-4-3.6z" fill="#fffdf7" stroke="#273445" stroke-width="1.6"/><path d="M5 6h5M5 10h5" stroke="{D}" stroke-width="1.4" stroke-linecap="round"/></g>'
+        if '팩트' in name:
+            return f'<g transform="translate(43 14)"><circle cx="6" cy="6" r="5" fill="none" stroke="#273445" stroke-width="2.3"/><path d="M10 10l6 6" stroke="{D}" stroke-width="2.5" stroke-linecap="round"/><path d="M3.5 6l2 2 4-4" fill="none" stroke="{C}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>'
+        if '실무' in name:
+            return f'<g transform="translate(43 13) rotate(-18)"><path d="M2 3l5 5 7-7 3 3-7 7 5 5-3 3L-1 6z" fill="#273445"/><path d="M6 8l4 4" stroke="{C}" stroke-width="1.5" stroke-linecap="round"/></g>'
+        if '최종' in name:
+            return f'<g transform="translate(43 15)"><rect x="3" y="0" width="8" height="13" rx="4" fill="#273445"/><path d="M0 8c0 5 14 5 14 0M7 13v5M3 18h8" stroke="{D}" stroke-width="2" stroke-linecap="round" fill="none"/></g>'
+        return ''
+
     def svg_robot(name, sz):
         cols = BOT_COLORS.get(name, ['#888888','#666666'])
         C, D = cols
@@ -325,6 +364,7 @@ def render_room(statuses, results, doc_name=""):
                 f'<rect x="15" y="26" width="34" height="28" rx="9" fill="#F4EFE6"/>'
                 + robot_face(name, C, D)
                 + robot_accessory(name, C, D)
+                + robot_tool(name, C, D)
                 + f'<rect x="22" y="54" width="20" height="7" rx="3.5" fill="{D}" opacity=".92"/>'
                 f'<circle cx="32" cy="57.5" r="2.3" fill="#fff" opacity=".75"/>'
                 f'<path d="M20 57v7" stroke="#9B8E7D" stroke-width="3" stroke-linecap="round"/>'
@@ -335,13 +375,13 @@ def render_room(statuses, results, doc_name=""):
     def bot_card(name, status):
         color = SC.get(status, '#bbb')
         glow = f'box-shadow:0 0 8px {color};' if status != 'idle' else ''
-        bubble = (f'<div onclick="wfShowSpeech(\'{name}\')" '
-                  'style="cursor:pointer;font-size:9px;font-weight:700;background:#fff8e1;'
+        bubble = ('<div style="font-size:9px;font-weight:700;background:#fff8e1;'
                   'border:1px solid #f0d98a;border-radius:9px;padding:2px 7px;color:#8a6500;'
                   'margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);'
-                  'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언중</div>') if status == 'active' else ''
+                  'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언 중</div>') if status == 'active' else ''
         short = name.replace('제크', '').replace('정리', '')
-        return (f'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
+        return (f'<div class="wf-bot" onclick="wfShowSpeech(\'{name}\')" title="발언 보기" '
+                f'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
                 + bubble
                 + svg_robot(name, 62)
                 + f'<div style="font-size:10px;font-weight:800;color:#2a2520;text-align:center;line-height:1.1">{short}</div>'
@@ -361,17 +401,17 @@ def render_room(statuses, results, doc_name=""):
     cs = g('최종정리봇')
     c_color = SC.get(cs, '#bbb')
     c_glow = f'box-shadow:0 0 7px {c_color};' if cs != 'idle' else ''
-    c_bubble = ('<div onclick="wfShowSpeech(\'최종정리봇\')" '
-                'style="cursor:pointer;font-size:9px;font-weight:700;background:#fff8e1;'
+    c_bubble = ('<div style="font-size:9px;font-weight:700;background:#fff8e1;'
                 'border:1px solid #f0d98a;border-radius:9px;padding:2px 7px;color:#8a6500;'
                 'margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);'
-                'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언중</div>') if cs == 'active' else ''
+                'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언 중</div>') if cs == 'active' else ''
 
     podium = (
-        '<div style="position:absolute;right:17%;top:48%;transform:translateY(-50%);'
+        '<div class="wf-host" style="position:absolute;right:0;top:50%;transform:translateY(-50%);'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;'
         'min-width:124px;">'
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;'
+        '<div class="wf-podium" onclick="wfShowSpeech(\'최종정리봇\')" title="발언 보기" '
+        'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;'
         'background:rgba(255,255,255,.48);border:1px solid #d7cfc3;border-radius:12px;'
         'padding:8px 12px 10px;box-shadow:0 5px 14px rgba(44,35,24,.12);">'
         + c_bubble
@@ -389,7 +429,13 @@ def render_room(statuses, results, doc_name=""):
 
     # 말풍선 클릭 시 뜨는 모달 + 애니메이션 (iframe 내부 자체 완결)
     _modal_html = (
-        '<style>@keyframes wfBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}</style>'
+        '<style>'
+        '@keyframes wfBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}'
+        '.wf-bot{transition:transform .16s ease,filter .16s ease;background:transparent;border-radius:14px;transform-origin:center bottom;position:relative;z-index:2;}'
+        '.wf-bot:hover{transform:translateY(-9px) scale(1.075);filter:drop-shadow(0 12px 14px rgba(47,35,20,.28));background:rgba(255,255,255,.42);z-index:20;}'
+        '.wf-podium{transition:transform .16s ease,box-shadow .16s ease;}'
+        '.wf-podium:hover{transform:translateY(-7px) scale(1.035);box-shadow:0 14px 24px rgba(44,35,24,.20)!important;}'
+        '</style>'
         '<div id="wfModal" onclick="if(event.target===this)this.style.display=\'none\'" '
         'style="display:none;position:fixed;inset:0;background:rgba(25,18,10,.5);z-index:99999;'
         'align-items:center;justify-content:center;padding:14px;box-sizing:border-box;'
@@ -406,28 +452,33 @@ def render_room(statuses, results, doc_name=""):
         '</div></div>'
         '<script>'
         'var WF_SPEECH=' + _speech_json + ';'
+        'var WF_STATUS=' + _status_json + ';'
+        'var WF_HINT=' + _hint_json + ';'
         'function wfShowSpeech(n){'
         'document.getElementById("wfModalTitle").textContent="\U0001F4AC "+n+" 발언";'
         'var t=WF_SPEECH[n];'
-        'document.getElementById("wfModalBody").textContent=(t&&(""+t).trim())?t:"아직 이 봇의 발언 내용이 도착하지 않았습니다.";'
+        'var s=WF_STATUS[n]||"idle";'
+        'var hint=WF_HINT[n]||"이 봇이 자기 관점으로 검토하는 중입니다.";'
+        'var empty=s==="active"?hint+"\\n\\n발언이 끝나면 이 창에서 실제 검토 내용이 표시됩니다.":"아직 이 봇의 발언 내용이 없습니다.";'
+        'document.getElementById("wfModalBody").textContent=(t&&(""+t).trim())?t:empty;'
         'document.getElementById("wfModal").style.display="flex";'
         '}'
         '</script>'
     )
 
     return (
-        '<div style="position:relative;background:linear-gradient(180deg,#e8e2d6,#dfd9cd);border-radius:16px;'
-        'padding:18px 10px 16px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;">'
+        '<div style="position:relative;background:radial-gradient(ellipse at center,rgba(255,255,255,.36),transparent 58%),linear-gradient(180deg,#e9e2d5,#d8d0c0);border-radius:16px;'
+        'min-height:326px;padding:16px 10px 18px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:visible;">'
         '<div style="display:flex;justify-content:center;align-items:center;">'
         '<div style="display:flex;flex-direction:column;align-items:center;">'
-        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:6px;">'
+        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:0;transform:translateY(-2px);">'
         + top_row + '</div>'
         '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
         + bot_card('팩트체크봇', g('팩트체크봇'))
-        + '<div style="width:320px;min-height:96px;"></div>'
+        + '<div style="width:312px;min-height:132px;"></div>'
         + bot_card('실무봇', g('실무봇'))
         + '</div>'
-        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:6px;">'
+        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:4px;transform:translateY(10px);">'
         + btm_row + '</div>'
         + '</div>'
         + '</div>'
@@ -658,54 +709,97 @@ with main_col:
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=350,
+            height=374,
         )
 
-    # 업로더를 회의 테이블 위로 겹쳐 올림. 드롭존은 section 태그라 div 한정 셀렉터 금지.
-    # 안내문(200MB...)은 숨겨 컴팩트하게. 테이블과 어긋나면 margin 첫 값(-214px)만 조정.
+    # 업로더를 회의 테이블처럼 겹쳐 올림. 테이블과 어긋나면 margin 첫 값만 조정.
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:320px !important; margin:-250px auto -80px auto !important;
+        width:340px !important; margin:-268px auto -190px auto !important;
         position:relative; z-index:50;
-        background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423) !important;
-        border:3px solid #4A2E18 !important; border-radius:10px !important;
-        box-shadow:0 6px 20px rgba(0,0,0,.4) !important;
-        padding:12px 10px !important;
+        background:
+            radial-gradient(ellipse at 50% 8%, rgba(255,229,174,.34), transparent 46%),
+            linear-gradient(155deg,#9A6840 0%,#6E4325 44%,#3E2415 100%) !important;
+        border:1px solid rgba(59,34,18,.92) !important; border-radius:18px !important;
+        box-shadow:
+            0 18px 32px rgba(38,25,14,.34),
+            inset 0 1px 0 rgba(255,236,194,.45),
+            inset 0 -10px 24px rgba(37,19,9,.20) !important;
+        padding:13px 16px 14px !important;
+        transition:transform .16s ease, box-shadow .16s ease;
+    }
+    [data-testid="stFileUploader"]:hover{
+        transform:translateY(-2px);
+        box-shadow:
+            0 22px 36px rgba(38,25,14,.38),
+            inset 0 1px 0 rgba(255,236,194,.52),
+            inset 0 -10px 24px rgba(37,19,9,.20) !important;
     }
     [data-testid="stFileUploader"] label{
-        color:#fff5e1 !important; font-weight:700; font-size:11px;
+        color:#fff5e1 !important; font-weight:800; font-size:0 !important;
         display:block !important; width:100% !important;
-        text-align:center !important; margin-bottom:6px !important; letter-spacing:1px;
+        text-align:center !important; margin-bottom:7px !important; letter-spacing:0;
+    }
+    [data-testid="stFileUploader"] label *{
+        font-size:0 !important;
+        line-height:0 !important;
+        color:transparent !important;
+    }
+    [data-testid="stFileUploader"] label::after{
+        content:"문서 업로드";
+        display:block;
+        line-height:1.2;
+        font-size:12px !important;
+        letter-spacing:0;
+        color:#fff5e1 !important;
     }
     [data-testid="stFileUploaderDropzone"]{
-        background:rgba(0,0,0,.18) !important;
-        border:1.5px dashed rgba(255,245,225,.85) !important;
-        border-radius:8px; min-height:0 !important; height:52px !important;
-        width:280px !important; max-width:280px !important; margin:0 auto !important;
+        background:rgba(31,18,10,.24) !important;
+        border:1px dashed rgba(255,238,202,.88) !important;
+        border-radius:12px; min-height:0 !important; height:54px !important;
+        width:296px !important; max-width:296px !important; margin:0 auto !important;
         padding:2px 8px !important; cursor:pointer !important;
-        display:flex; justify-content:center; align-items:center;
+        position:relative;
+        text-align:center;
+        display:flex; flex-direction:column; justify-content:center; align-items:center;
     }
     [data-testid="stFileUploaderDropzone"]:hover{
         border-color:#ffe6ad !important; background:rgba(0,0,0,.28) !important;
     }
     [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
-    [data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
+    [data-testid="stFileUploaderDropzone"] *{ color:transparent !important; font-size:0 !important; }
     [data-testid="stFileUploaderDropzone"] button{ display:none !important; }
+    [data-testid="stFileUploaderDropzone"]::before{
+        content:"파일 선택";
+        color:#fff5e1 !important;
+        font-size:12px;
+        font-weight:800;
+        line-height:1.1;
+        position:absolute;
+        left:0; right:0; top:13px;
+        text-align:center;
+    }
     [data-testid="stFileUploaderDropzone"]::after{
-        content:"⬆  여기로 파일을 끌어다 놓거나 클릭"; color:#fff5e1 !important;
-        font-size:11px; font-weight:700; opacity:.92;
+        content:"PDF · DOCX · TXT · PPTX"; color:rgba(255,245,225,.72) !important;
+        font-size:9.5px; font-weight:700; opacity:.95;
+        position:absolute;
+        left:0; right:0; top:31px;
+        text-align:center;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    ufile = st.file_uploader("📄 클릭 또는 드래그하여 업로드",
+    ufile = st.file_uploader("문서 업로드",
                              type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
     if ufile:
         if st.session_state.current_doc != ufile.name:
             st.session_state.current_doc = ufile.name; st.rerun()
 
-    st.divider()
+    st.markdown(
+        '<div style="height:8px;border-top:1px solid rgba(80,70,55,.18);margin:4px 0 8px;"></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown("##### 💬 질문 / 검토 요청")
     question = st.text_area("질문", height=80, label_visibility="collapsed",
         placeholder="예: 이 근로계약서 수습기간 조항이 법적으로 문제없나요?")
@@ -753,7 +847,7 @@ def upd(statuses_update, results_update=None):
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=350,
+            height=374,
         )
 
 def check_stop():
