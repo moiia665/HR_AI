@@ -659,7 +659,7 @@ with main_col:
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=360,
+            height=350,
         )
 
     # 업로더를 회의 테이블 위로 겹쳐 올림. 드롭존은 section 태그라 div 한정 셀렉터 금지.
@@ -667,16 +667,19 @@ with main_col:
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:200px; margin:-250px auto -40px auto; position:relative; z-index:50;
+        width:180px !important; margin:-250px auto -62px auto !important;
+        position:relative; z-index:50;
     }
     [data-testid="stFileUploader"] label{
         color:#fff5e1 !important; font-weight:700; font-size:10px;
-        width:100%; justify-content:center; text-align:center; margin-bottom:1px !important;
+        display:block !important; width:100% !important;
+        text-align:center !important; margin-bottom:2px !important;
     }
     [data-testid="stFileUploaderDropzone"]{
         background:rgba(0,0,0,.16) !important;
         border:1.5px dashed rgba(255,245,225,.85) !important;
-        border-radius:9px; min-height:0 !important; height:38px !important;
+        border-radius:9px; min-height:0 !important; height:40px !important;
+        width:180px !important; max-width:180px !important; margin:0 auto !important;
         padding:2px 6px !important;
         display:flex; justify-content:center; align-items:center;
     }
@@ -744,7 +747,7 @@ def upd(statuses_update, results_update=None):
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=360,
+            height=350,
         )
 
 def check_stop():
