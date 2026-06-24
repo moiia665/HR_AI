@@ -368,7 +368,7 @@ def render_room(statuses, results, doc_name=""):
                 'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언중</div>') if cs == 'active' else ''
 
     podium = (
-        '<div style="position:absolute;right:18px;top:48%;transform:translateY(-50%);'
+        '<div style="position:absolute;right:17%;top:48%;transform:translateY(-50%);'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;'
         'min-width:124px;">'
         '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;'
@@ -666,7 +666,7 @@ with main_col:
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:320px !important; margin:-238px auto -54px auto !important;
+        width:320px !important; margin:-250px auto -80px auto !important;
         position:relative; z-index:50;
         background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423) !important;
         border:3px solid #4A2E18 !important; border-radius:10px !important;
@@ -681,18 +681,20 @@ with main_col:
     [data-testid="stFileUploaderDropzone"]{
         background:rgba(0,0,0,.18) !important;
         border:1.5px dashed rgba(255,245,225,.85) !important;
-        border-radius:8px; min-height:0 !important; height:46px !important;
+        border-radius:8px; min-height:0 !important; height:52px !important;
         width:280px !important; max-width:280px !important; margin:0 auto !important;
-        padding:2px 8px !important;
+        padding:2px 8px !important; cursor:pointer !important;
         display:flex; justify-content:center; align-items:center;
     }
-    [data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffe6ad !important; }
+    [data-testid="stFileUploaderDropzone"]:hover{
+        border-color:#ffe6ad !important; background:rgba(0,0,0,.28) !important;
+    }
     [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
     [data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
-    [data-testid="stFileUploaderDropzone"] button,
-    [data-testid="stFileUploaderDropzone"] button *{
-        background:#fff7ec !important; color:#5a3d22 !important;
-        border:none !important; font-weight:700; margin:0 auto !important;
+    [data-testid="stFileUploaderDropzone"] button{ display:none !important; }
+    [data-testid="stFileUploaderDropzone"]::after{
+        content:"⬆  여기로 파일을 끌어다 놓거나 클릭"; color:#fff5e1 !important;
+        font-size:11px; font-weight:700; opacity:.92;
     }
     </style>
     """, unsafe_allow_html=True)
