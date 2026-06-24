@@ -368,8 +368,9 @@ def render_room(statuses, results, doc_name=""):
                 'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언중</div>') if cs == 'active' else ''
 
     podium = (
-        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;'
-        'min-width:124px;margin-left:8px;">'
+        '<div style="position:absolute;right:18px;top:48%;transform:translateY(-50%);'
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+        'min-width:124px;">'
         '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;'
         'background:rgba(255,255,255,.48);border:1px solid #d7cfc3;border-radius:12px;'
         'padding:8px 12px 10px;box-shadow:0 5px 14px rgba(44,35,24,.12);">'
@@ -415,9 +416,9 @@ def render_room(statuses, results, doc_name=""):
     )
 
     return (
-        '<div style="background:linear-gradient(180deg,#e8e2d6,#dfd9cd);border-radius:16px;'
+        '<div style="position:relative;background:linear-gradient(180deg,#e8e2d6,#dfd9cd);border-radius:16px;'
         'padding:18px 10px 16px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;">'
-        '<div style="display:flex;justify-content:center;align-items:center;gap:16px;">'
+        '<div style="display:flex;justify-content:center;align-items:center;">'
         '<div style="display:flex;flex-direction:column;align-items:center;">'
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:6px;">'
         + top_row + '</div>'
@@ -429,8 +430,9 @@ def render_room(statuses, results, doc_name=""):
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:6px;">'
         + btm_row + '</div>'
         + '</div>'
+        + '</div>'
         + podium
-        + '</div></div>'
+        + '</div>'
         + _modal_html
     )
 
