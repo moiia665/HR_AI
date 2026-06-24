@@ -74,10 +74,6 @@ st.markdown("""
 [data-testid="stSidebar"]{background:#f3efe8; }
 [data-testid="stSidebarContent"]{padding:14px 10px 16px;}
 #MainMenu,footer{visibility:hidden;}
-[data-testid="stFileUploader"]{
-  opacity:0 !important;height:0 !important;overflow:hidden !important;
-  margin:0 !important;padding:0 !important;position:absolute !important;
-}
 .sidebar-brand{display:flex;align-items:center;gap:8px;margin:2px 4px 12px;
   font-size:18px;font-weight:800;color:#211c18;}
 .sidebar-brand .mark{width:24px;height:24px;border-radius:8px;background:#26211c;
@@ -664,36 +660,23 @@ with main_col:
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=380,
+            height=330,
         )
 
-    # 회의 테이블 바로 아래에 붙는 갈색 문서 업로더 (클릭+드래그앤드롭 모두 작동)
-    # 회의실과 업로더 사이 간격은 아래 margin 첫 값으로 조정합니다.
+    # 회의실 바로 아래 문서 업로더 — 순정 위젯이라 클릭/드래그가 확실히 작동
+    # (테두리만 살짝 갈색으로. 내부 요소는 절대 건드리지 않음 = 클릭 동작 보존)
     st.markdown("""
     <style>
-    div[data-testid="stFileUploader"]{
-        width:340px; margin:-6px auto 2px auto;
-    }
-    div[data-testid="stFileUploader"] > label{ display:none; }
+    div[data-testid="stFileUploader"]{ max-width:440px; margin:2px auto 4px auto; }
     div[data-testid="stFileUploaderDropzone"]{
-        background:linear-gradient(160deg,#6B4423,#8B5E3C 45%,#9B6B45 60%,#6B4423);
-        border:3px solid #4A2E18; border-radius:10px;
-        min-height:60px; padding:8px 14px;
-        box-shadow:0 6px 18px rgba(0,0,0,.30);
-        cursor:pointer;
+        border:2px dashed #8B5E3C; border-radius:10px; background:#faf6ee;
     }
-    div[data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffd98a; }
-    div[data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
-    div[data-testid="stFileUploaderDropzone"] small{ color:rgba(255,245,225,.8) !important; }
-    div[data-testid="stFileUploaderDropzone"] button{
-        background:rgba(255,255,255,.92) !important; color:#5a3d22 !important;
-        border:none !important; font-weight:700;
-    }
+    div[data-testid="stFileUploaderDropzone"]:hover{ border-color:#6B4423; background:#f2e9da; }
     </style>
     """, unsafe_allow_html=True)
 
-    ufile = st.file_uploader("문서", type=["pdf", "docx", "txt", "pptx"],
-                             label_visibility="collapsed", key="doc_upload")
+    ufile = st.file_uploader("📄 회의 문서 업로드 — 클릭하거나 파일을 끌어다 놓으세요",
+                             type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
     if ufile:
         if st.session_state.current_doc != ufile.name:
             st.session_state.current_doc = ufile.name; st.rerun()
@@ -746,7 +729,7 @@ def upd(statuses_update, results_update=None):
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=380,
+            height=330,
         )
 
 def check_stop():
