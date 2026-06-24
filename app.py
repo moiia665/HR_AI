@@ -423,10 +423,7 @@ def render_room(statuses, results, doc_name=""):
         + top_row + '</div>'
         '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
         + bot_card('팩트체크봇', g('팩트체크봇'))
-        + '<div style="width:320px;min-height:92px;background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423);'
-          'border-radius:10px;border:3px solid #4A2E18;box-shadow:0 6px 20px rgba(0,0,0,.4);'
-          'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;">'
-        + table_inner + '</div>'
+        + '<div style="width:320px;min-height:96px;"></div>'
         + bot_card('실무봇', g('실무봇'))
         + '</div>'
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:6px;">'
@@ -667,24 +664,29 @@ with main_col:
     st.markdown("""
     <style>
     [data-testid="stFileUploader"]{
-        width:180px !important; margin:-250px auto -62px auto !important;
+        width:320px !important; margin:-238px auto -54px auto !important;
         position:relative; z-index:50;
+        background:linear-gradient(160deg,#6B4423,#8B5E3C 40%,#9B6B45 60%,#6B4423) !important;
+        border:3px solid #4A2E18 !important; border-radius:10px !important;
+        box-shadow:0 6px 20px rgba(0,0,0,.4) !important;
+        padding:12px 10px !important;
     }
     [data-testid="stFileUploader"] label{
-        color:#fff5e1 !important; font-weight:700; font-size:10px;
+        color:#fff5e1 !important; font-weight:700; font-size:11px;
         display:block !important; width:100% !important;
-        text-align:center !important; margin-bottom:2px !important;
+        text-align:center !important; margin-bottom:6px !important; letter-spacing:1px;
     }
     [data-testid="stFileUploaderDropzone"]{
-        background:rgba(0,0,0,.16) !important;
+        background:rgba(0,0,0,.18) !important;
         border:1.5px dashed rgba(255,245,225,.85) !important;
-        border-radius:9px; min-height:0 !important; height:40px !important;
-        width:180px !important; max-width:180px !important; margin:0 auto !important;
-        padding:2px 6px !important;
+        border-radius:8px; min-height:0 !important; height:46px !important;
+        width:280px !important; max-width:280px !important; margin:0 auto !important;
+        padding:2px 8px !important;
         display:flex; justify-content:center; align-items:center;
     }
     [data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffe6ad !important; }
     [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
+    [data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
     [data-testid="stFileUploaderDropzone"] button,
     [data-testid="stFileUploaderDropzone"] button *{
         background:#fff7ec !important; color:#5a3d22 !important;
