@@ -360,7 +360,7 @@ def render_room(statuses, results, doc_name=""):
     if doc_name:
         table_inner = f'<div style="background:rgba(255,255,255,.88);border-radius:4px;padding:3px 10px;font-size:9px;color:#3a2800;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📄 {doc_name}</div>'
     else:
-        table_inner = '<div style="font-size:9px;color:rgba(255,255,255,.5);text-align:center">대화록 및 문서를 업로드하세요</div>'
+        table_inner = '<div style="font-size:9px;color:rgba(255,255,255,.55);text-align:center">📄 문서를 올려주세요 ↓</div>'
 
     cs = g('최종정리봇')
     c_color = SC.get(cs, '#bbb')
@@ -664,27 +664,27 @@ with main_col:
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=440,
+            height=380,
         )
 
-    # 회의 테이블 중앙에 문서 업로더를 올려놓는 오버레이 스타일
-    # (회의실 위치가 어긋나면 아래 margin-top 값만 조정하면 됩니다)
+    # 회의 테이블 바로 아래에 붙는 갈색 문서 업로더 (클릭+드래그앤드롭 모두 작동)
+    # 회의실과 업로더 사이 간격은 아래 margin 첫 값으로 조정합니다.
     st.markdown("""
     <style>
     div[data-testid="stFileUploader"]{
-        width:300px; margin:-236px auto 50px auto; position:relative; z-index:30;
+        width:340px; margin:-6px auto 2px auto;
     }
     div[data-testid="stFileUploader"] > label{ display:none; }
     div[data-testid="stFileUploaderDropzone"]{
-        background:rgba(74,46,24,.10);
-        border:1.5px dashed rgba(255,245,225,.6);
-        border-radius:10px; min-height:70px; padding:6px 10px;
+        background:linear-gradient(160deg,#6B4423,#8B5E3C 45%,#9B6B45 60%,#6B4423);
+        border:3px solid #4A2E18; border-radius:10px;
+        min-height:60px; padding:8px 14px;
+        box-shadow:0 6px 18px rgba(0,0,0,.30);
+        cursor:pointer;
     }
-    div[data-testid="stFileUploaderDropzone"]:hover{
-        border-color:#ffd98a; background:rgba(74,46,24,.28);
-    }
+    div[data-testid="stFileUploaderDropzone"]:hover{ border-color:#ffd98a; }
     div[data-testid="stFileUploaderDropzone"] *{ color:#fff5e1 !important; }
-    div[data-testid="stFileUploaderDropzone"] small{ color:rgba(255,245,225,.75) !important; }
+    div[data-testid="stFileUploaderDropzone"] small{ color:rgba(255,245,225,.8) !important; }
     div[data-testid="stFileUploaderDropzone"] button{
         background:rgba(255,255,255,.92) !important; color:#5a3d22 !important;
         border:none !important; font-weight:700;
@@ -746,7 +746,7 @@ def upd(statuses_update, results_update=None):
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
                         st.session_state.current_doc),
-            height=460,
+            height=380,
         )
 
 def check_stop():
