@@ -148,6 +148,11 @@ FINAL_SYS = (
     "## 핵심 결론\n## 주요 리스크\n## 액션 아이템 (우선순위 순)\n## 전문가 확인 필요 사항"
 )
 
+CEO_SYS = (
+    "웰파인 대표님 페르소나 AI. 보고를 받고 대표 관점에서 질문, 우려, 지시사항을 제시합니다.\n"
+    "※ 현재는 UI 껍데기 단계이며, 실제 대표님 자료 학습과 보고 피드백 기능은 추후 연결합니다."
+)
+
 SCREEN_SYS = (
     "웰파인 HR AI 회의 코디네이터. 이번 안건과 관련 있는 봇만 골라주세요.\n\n"
     "봇 전문 영역:\n"
@@ -179,6 +184,7 @@ BOT_COLORS = {
     "\ud329\ud2b8\uccb4\ud06c\ubd07": ["#C92A2A","#A01E1E"],
     "\uc2e4\ubb34\ubd07":     ["#7B5E3C","#5A4228"],
     "\ucd5c\uc885\uc815\ub9ac\ubd07": ["#1565C0","#0D47A0"],
+    "대표님봇": ["#4E3A2A","#2F231B"],
 }
 
 def call_bot(pkey, api_key, model, system, content, max_tokens=700):
@@ -263,7 +269,7 @@ def build_partial_summary(results):
     return "\n".join(lines).strip()
 
 
-def render_room(statuses, results, doc_name=""):
+def render_room(statuses, results, doc_name="", ceo_doc_name=""):
     SC = {'idle':'#bbb','active':'#f5c842','done':'#52c463','error':'#e05555'}
 
     # 말풍선 모달용 발언 데이터 (results 그대로 사용, 팩트체크봇은 최신 키로 매핑)
@@ -283,6 +289,7 @@ def render_room(statuses, results, doc_name=""):
         "팩트체크봇": "앞선 발언의 사실관계와 법적 근거를 다시 확인하는 중입니다.",
         "실무봇": "현장에서 실제로 실행 가능한 대응안으로 정리하는 중입니다.",
         "최종정리봇": "오른쪽 연단에서 각 봇 발언을 종합해 최종 결론을 정리하는 중입니다.",
+        "대표님봇": "유리벽 너머 대표실에서 보고를 기다리는 중입니다.",
     }
     _bubble_hints = {
         "노무봇": "노동법·임금 리스크\n검토 중",
@@ -295,6 +302,7 @@ def render_room(statuses, results, doc_name=""):
         "팩트체크봇": "근거와 사실관계\n재확인 중",
         "실무봇": "현장 실행안으로\n정리 중",
         "최종정리봇": "각 봇 의견을 모아\n최종 정리 중",
+        "대표님봇": "대표 관점 피드백\n대기 중",
     }
     _speech_json = json.dumps(_speech, ensure_ascii=False).replace("</", "<\\/")
     _status_json = json.dumps(statuses or {}, ensure_ascii=False).replace("</", "<\\/")
@@ -329,6 +337,8 @@ def render_room(statuses, results, doc_name=""):
             return f'<circle cx="25" cy="36" r="3.8" fill="{C}"/><circle cx="39" cy="36" r="3.8" fill="{C}"/><path d="M27.5 44.5h9" stroke="#273445" stroke-width="2.5" stroke-linecap="round"/>'
         if '실무' in name:
             return f'<path d="M21 32l9 3M43 32l-9 3" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><circle cx="25" cy="38" r="3.7" fill="{C}"/><circle cx="39" cy="38" r="3.7" fill="{C}"/><path d="M28.5 44c1 1.8 5 1.8 7 0" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
+        if '대표' in name:
+            return f'<path d="M21 32l8 1.2M43 32l-8 1.2" stroke="#273445" stroke-width="2.1" stroke-linecap="round"/><rect x="21.5" y="35" width="8" height="5" rx="2.5" fill="{C}"/><rect x="34.5" y="35" width="8" height="5" rx="2.5" fill="{C}"/><path d="M29.5 37.5h5" stroke="#273445" stroke-width="1.4"/><path d="M28 44c2.5 2.2 6.5 2.2 8 0" fill="none" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
         return f'<circle cx="25" cy="36" r="3.8" fill="{C}"/><circle cx="39" cy="36" r="3.8" fill="{C}"/><path d="M29 44h6" stroke="#273445" stroke-width="2" stroke-linecap="round"/>'
 
     def robot_accessory(name, C, D):
@@ -336,6 +346,8 @@ def render_room(statuses, results, doc_name=""):
             return f'<rect x="17" y="18" width="30" height="9" rx="4.5" fill="#273445"/><rect x="19" y="20" width="26" height="5" rx="2.5" fill="{C}" opacity=".35"/><circle cx="32" cy="14" r="3.5" fill="#273445"/>'
         if '최종' in name:
             return f'<rect x="28" y="10" width="8" height="15" rx="4" fill="#273445"/><circle cx="32" cy="8" r="3.2" fill="{C}"/><path d="M24 22h16" stroke="#273445" stroke-width="2.4" stroke-linecap="round"/>'
+        if '대표' in name:
+            return f'<path d="M20 22h24l-3-8H23z" fill="#273445"/><path d="M24 14h16" stroke="{C}" stroke-width="2" stroke-linecap="round"/><rect x="27" y="11" width="10" height="4" rx="2" fill="{C}"/>'
         if '계약' in name:
             return f'<path d="M17 23a15 5 0 0 1 30 0" fill="{C}"/><rect x="16" y="21.5" width="32" height="4" rx="2" fill="#273445"/>'
         if '팩트' in name:
@@ -375,6 +387,8 @@ def render_room(statuses, results, doc_name=""):
             return f'<g transform="translate(43 13) rotate(-18)"><path d="M2 3l5 5 7-7 3 3-7 7 5 5-3 3L-1 6z" fill="#273445"/><path d="M6 8l4 4" stroke="{C}" stroke-width="1.5" stroke-linecap="round"/></g>'
         if '최종' in name:
             return f'<g transform="translate(43 15)"><rect x="3" y="0" width="8" height="13" rx="4" fill="#273445"/><path d="M0 8c0 5 14 5 14 0M7 13v5M3 18h8" stroke="{D}" stroke-width="2" stroke-linecap="round" fill="none"/></g>'
+        if '대표' in name:
+            return f'<g transform="translate(43 15)"><rect x="0" y="0" width="13" height="16" rx="2" fill="#fffdf7" stroke="#273445" stroke-width="1.6"/><path d="M3 5h7M3 9h6M3 13h4" stroke="{D}" stroke-width="1.4" stroke-linecap="round"/></g>'
         return ''
 
     def svg_robot(name, sz):
@@ -423,7 +437,7 @@ def render_room(statuses, results, doc_name=""):
     c_bubble = f'<div class="wf-bubble wf-bubble-host">{_bubble_text("최종정리봇")}</div>' if cs == 'active' else ''
 
     podium = (
-        '<div class="wf-host" style="position:absolute;right:230px;top:50%;transform:translateY(-50%);'
+        '<div class="wf-host" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;'
         'min-width:124px;">'
         '<div class="wf-podium" onclick="wfShowSpeech(\'최종정리봇\')" title="발언 보기" '
@@ -441,6 +455,40 @@ def render_room(statuses, results, doc_name=""):
           '<div style="font-size:9px;color:#6b5e4f">회의 진행자</div>'
         + f'<div style="width:8px;height:8px;border-radius:50%;background:{c_color};{c_glow}"></div>'
         + '</div></div>'
+    )
+
+    ceo_doc = (
+        f'<div style="max-width:132px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+        f'font-size:9px;font-weight:800;color:#514130;background:rgba(255,255,255,.74);'
+        f'border:1px solid rgba(110,92,70,.22);border-radius:8px;padding:4px 8px;">📄 {html.escape(ceo_doc_name)}</div>'
+        if ceo_doc_name else
+        '<div style="font-size:9px;font-weight:800;color:#7b6f62;background:rgba(255,255,255,.42);'
+        'border:1px dashed rgba(110,92,70,.28);border-radius:8px;padding:4px 8px;">보고 서류 대기</div>'
+    )
+    ceo_office = (
+        '<div style="position:relative;flex:0 0 25%;min-width:210px;overflow:hidden;'
+        'border-left:1px solid rgba(120,150,170,.38);'
+        'background:linear-gradient(120deg,rgba(235,245,247,.78),rgba(226,223,211,.82));">'
+        '<div style="position:absolute;inset:0;background:repeating-linear-gradient(110deg,'
+        'rgba(255,255,255,.0) 0 26px,rgba(255,255,255,.20) 27px 29px);"></div>'
+        '<div style="position:absolute;left:0;top:0;bottom:0;width:12px;'
+        'background:linear-gradient(90deg,rgba(255,255,255,.68),rgba(156,184,196,.12));'
+        'border-right:1px solid rgba(255,255,255,.42);"></div>'
+        '<div style="position:relative;height:100%;display:flex;flex-direction:column;align-items:center;'
+        'justify-content:center;gap:6px;padding:16px 14px 14px;">'
+        '<div style="font-size:10px;font-weight:900;color:#5d5248;letter-spacing:.02em;">대표실</div>'
+        + svg_robot('대표님봇', 76)
+        + '<div style="width:154px;height:48px;margin-top:-8px;border-radius:11px 11px 7px 7px;'
+        'background:linear-gradient(180deg,#8B5E3C,#4E3020);border:1px solid #3e281b;'
+        'box-shadow:0 12px 20px rgba(45,30,18,.25),inset 0 1px 0 rgba(255,235,190,.34);'
+        'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;">'
+        '<div style="font-size:8px;font-weight:900;color:rgba(255,245,225,.68);letter-spacing:1px;">CEO DESK</div>'
+        + ceo_doc
+        + '</div>'
+        '<div style="font-size:11px;font-weight:900;color:#2a2520;">대표님봇</div>'
+        '<div style="font-size:9px;color:#6b5e4f;">보고 대기</div>'
+        '<div style="width:8px;height:8px;border-radius:50%;background:#bbb;"></div>'
+        '</div></div>'
     )
 
     # 말풍선 클릭 시 뜨는 모달 + 애니메이션 (iframe 내부 자체 완결)
@@ -496,8 +544,9 @@ def render_room(statuses, results, doc_name=""):
     )
 
     return (
-        '<div style="position:relative;background:radial-gradient(ellipse at center,rgba(255,255,255,.36),transparent 58%),linear-gradient(180deg,#e9e2d5,#d8d0c0);border-radius:16px;'
-        'min-height:326px;padding:16px 10px 18px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:visible;">'
+        '<div style="position:relative;display:flex;background:radial-gradient(ellipse at 37% 50%,rgba(255,255,255,.36),transparent 58%),linear-gradient(180deg,#e9e2d5,#d8d0c0);border-radius:16px;'
+        'min-height:326px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:hidden;">'
+        '<div style="position:relative;flex:1 1 75%;min-width:0;padding:16px 10px 18px;overflow:visible;">'
         '<div style="display:flex;justify-content:center;align-items:center;">'
         '<div style="display:flex;flex-direction:column;align-items:center;">'
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:0;transform:translateY(-2px);">'
@@ -513,6 +562,7 @@ def render_room(statuses, results, doc_name=""):
         + '</div>'
         + podium
         + '</div>'
+        + ceo_office
         + _modal_html
     )
 
@@ -523,6 +573,7 @@ for k, v in [
     ("bot_statuses", {}), ("bot_results", {}), ("case_notes", ""),
     ("stop_requested", False), ("meeting_running", False),
     ("meeting_history", []), ("renaming_idx", None), ("current_doc", ""),
+    ("ceo_current_doc", ""), ("report_input", ""),
     ("show_result_panel", False), ("last_final", ""), ("selected_history_idx", None),
     ("current_question", ""), ("feedback_pending", ""), ("stop_notice", ""),
     ("saved_provider", _cfg.get("provider", list(PROVIDERS.keys())[0])),
@@ -541,7 +592,7 @@ if "history_loaded" not in st.session_state:
 
 if "bot_prompts" not in st.session_state:
     bp0 = {b["name"]: b["system"] for b in BOTS}
-    bp0.update({"팩트체크봇": FACTCHECK_SYS, "실무봇": FIELD_SYS, "최종정리봇": FINAL_SYS})
+    bp0.update({"팩트체크봇": FACTCHECK_SYS, "실무봇": FIELD_SYS, "최종정리봇": FINAL_SYS, "대표님봇": CEO_SYS})
     st.session_state.bot_prompts = bp0
 
 # ── 현재 설정값 도출 ───────────────────────────────────────
@@ -584,7 +635,7 @@ def show_settings():
             save_cfg({"provider": pl, "model": ml, "api_key": ak})
             st.rerun()
     with tab2:
-        all_names = ([b["name"] for b in BOTS] + ["팩트체크봇", "실무봇", "최종정리봇"])
+        all_names = ([b["name"] for b in BOTS] + ["팩트체크봇", "실무봇", "최종정리봇", "대표님봇"])
         bs = st.selectbox("봇 선택", all_names)
         ed = st.text_area("프롬프트", value=st.session_state.bot_prompts.get(bs, ""), height=220)
         if st.button("💾 프롬프트 저장", use_container_width=True):
@@ -631,6 +682,8 @@ def _new_meeting():
     st.session_state.bot_statuses = {}
     st.session_state.bot_results = {}
     st.session_state.current_doc = ""
+    st.session_state.ceo_current_doc = ""
+    st.session_state.report_input = ""
     st.session_state.last_final = ""
     st.session_state.show_result_panel = False
     st.session_state.selected_history_idx = None
@@ -732,20 +785,28 @@ with main_col:
         st.session_state.stop_notice = ""
 
     st.divider()
+    work_mode = st.radio(
+        "진행 방식",
+        ["전문봇 회의", "대표님 보고"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="work_mode",
+    )
     table_slot = st.empty()
     with table_slot:
         components.html(
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
-                        st.session_state.current_doc),
+                        st.session_state.current_doc,
+                        st.session_state.ceo_current_doc),
             height=374,
         )
 
     # 업로더를 회의 테이블처럼 겹쳐 올림. 테이블과 어긋나면 margin 첫 값만 조정.
     st.markdown("""
     <style>
-    [data-testid="stFileUploader"]{
-        width:340px !important; margin:-268px auto -190px auto !important;
+    .st-key-doc_upload [data-testid="stFileUploader"]{
+        width:340px !important; margin:-268px 0 -190px calc(37.5% - 170px) !important;
         position:relative; z-index:50;
         background:
             radial-gradient(ellipse at 50% 8%, rgba(255,229,174,.34), transparent 46%),
@@ -758,24 +819,24 @@ with main_col:
         padding:13px 16px 14px !important;
         transition:transform .16s ease, box-shadow .16s ease;
     }
-    [data-testid="stFileUploader"]:hover{
+    .st-key-doc_upload [data-testid="stFileUploader"]:hover{
         transform:translateY(-2px);
         box-shadow:
             0 22px 36px rgba(38,25,14,.38),
             inset 0 1px 0 rgba(255,236,194,.52),
             inset 0 -10px 24px rgba(37,19,9,.20) !important;
     }
-    [data-testid="stFileUploader"] label{
+    .st-key-doc_upload [data-testid="stFileUploader"] label{
         color:#fff5e1 !important; font-weight:800; font-size:0 !important;
         display:block !important; width:100% !important;
         text-align:center !important; margin-bottom:7px !important; letter-spacing:0;
     }
-    [data-testid="stFileUploader"] label *{
+    .st-key-doc_upload [data-testid="stFileUploader"] label *{
         font-size:0 !important;
         line-height:0 !important;
         color:transparent !important;
     }
-    [data-testid="stFileUploader"] label::after{
+    .st-key-doc_upload [data-testid="stFileUploader"] label::after{
         content:"문서 업로드";
         display:block;
         line-height:1.2;
@@ -783,7 +844,7 @@ with main_col:
         letter-spacing:0;
         color:#fff5e1 !important;
     }
-    [data-testid="stFileUploaderDropzone"]{
+    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]{
         background:rgba(31,18,10,.24) !important;
         border:1px dashed rgba(255,238,202,.88) !important;
         border-radius:12px; min-height:0 !important; height:54px !important;
@@ -793,13 +854,13 @@ with main_col:
         text-align:center;
         display:flex; flex-direction:column; justify-content:center; align-items:center;
     }
-    [data-testid="stFileUploaderDropzone"]:hover{
+    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]:hover{
         border-color:#ffe6ad !important; background:rgba(0,0,0,.28) !important;
     }
-    [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
-    [data-testid="stFileUploaderDropzone"] *{ color:transparent !important; font-size:0 !important; }
-    [data-testid="stFileUploaderDropzone"] button{ display:none !important; }
-    [data-testid="stFileUploaderDropzone"]::before{
+    .st-key-doc_upload [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
+    .st-key-doc_upload [data-testid="stFileUploaderDropzone"] *{ color:transparent !important; font-size:0 !important; }
+    .st-key-doc_upload [data-testid="stFileUploaderDropzone"] button{ display:none !important; }
+    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]::before{
         content:"파일 선택";
         color:#fff5e1 !important;
         font-size:12px;
@@ -809,7 +870,7 @@ with main_col:
         left:0; right:0; top:13px;
         text-align:center;
     }
-    [data-testid="stFileUploaderDropzone"]::after{
+    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]::after{
         content:"PDF · DOCX · TXT · PPTX"; color:rgba(255,245,225,.72) !important;
         font-size:9.5px; font-weight:700; opacity:.95;
         position:absolute;
@@ -819,43 +880,71 @@ with main_col:
     </style>
     """, unsafe_allow_html=True)
 
-    ufile = st.file_uploader("문서 업로드",
-                             type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
-    if ufile:
-        if st.session_state.current_doc != ufile.name:
-            st.session_state.current_doc = ufile.name; st.rerun()
+    go = False
+    ufile = None
+    question = ""
 
-    st.markdown(
-        '<div style="height:8px;border-top:1px solid rgba(80,70,55,.18);margin:4px 0 8px;"></div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("##### 💬 질문 / 검토 요청")
-    question = st.text_area("질문", height=80, label_visibility="collapsed",
-        placeholder="예: 이 근로계약서 수습기간 조항이 법적으로 문제없나요?")
+    if work_mode == "전문봇 회의":
+        ufile = st.file_uploader("문서 업로드",
+                                 type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
+        if ufile:
+            if st.session_state.current_doc != ufile.name:
+                st.session_state.current_doc = ufile.name; st.rerun()
 
-    btn_c1, btn_c2 = st.columns([3, 1])
-    with btn_c1:
-        go = st.button("🚀 회의 시작", type="primary", use_container_width=True,
-                       disabled=st.session_state.meeting_running)
-    with btn_c2:
-        if st.button("⏹ 중단", use_container_width=True,
-                     disabled=not st.session_state.meeting_running):
-            st.session_state.stop_requested = True
-            st.session_state.meeting_running = False; st.rerun()
+        st.markdown(
+            '<div style="height:8px;border-top:1px solid rgba(80,70,55,.18);margin:4px 0 8px;"></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("##### 💬 회의 안건 / 검토 요청")
+        question = st.text_area("회의 안건", height=80, label_visibility="collapsed",
+            placeholder="예: 이 근로계약서 수습기간 조항이 법적으로 문제없나요?")
 
-    # 피드백 섹션
-    if st.session_state.last_final and not st.session_state.meeting_running:
-        with st.expander("💬 최종 결론에 대한 추가 질문 / 피드백"):
-            feedback_q = st.text_area("피드백 내용", key="feedback_input", height=80,
-                placeholder="예: 수습 3개월 조항에 대해 더 자세히 알고 싶어요...")
-            if st.button("🔄 피드백 반영 추가 회의", key="feedback_go"):
-                if feedback_q.strip():
-                    st.session_state.feedback_pending = feedback_q.strip(); st.rerun()
-                else:
-                    st.warning("추가 질문이나 피드백 내용을 먼저 입력해주세요.")
+        btn_c1, btn_c2 = st.columns([3, 1])
+        with btn_c1:
+            go = st.button("🚀 회의 시작", type="primary", use_container_width=True,
+                           disabled=st.session_state.meeting_running)
+        with btn_c2:
+            if st.button("⏹ 중단", use_container_width=True,
+                         disabled=not st.session_state.meeting_running):
+                st.session_state.stop_requested = True
+                st.session_state.meeting_running = False; st.rerun()
 
-    if st.session_state.get("feedback_pending"):
-        go = True
+        # 피드백 섹션
+        if st.session_state.last_final and not st.session_state.meeting_running:
+            with st.expander("💬 최종 결론에 대한 추가 질문 / 피드백"):
+                feedback_q = st.text_area("피드백 내용", key="feedback_input", height=80,
+                    placeholder="예: 수습 3개월 조항에 대해 더 자세히 알고 싶어요...")
+                if st.button("🔄 피드백 반영 추가 회의", key="feedback_go"):
+                    if feedback_q.strip():
+                        st.session_state.feedback_pending = feedback_q.strip(); st.rerun()
+                    else:
+                        st.warning("추가 질문이나 피드백 내용을 먼저 입력해주세요.")
+
+        if st.session_state.get("feedback_pending"):
+            go = True
+    else:
+        st.markdown(
+            '<div style="height:8px;border-top:1px solid rgba(80,70,55,.18);margin:4px 0 8px;"></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("##### 🧑‍💼 대표님 보고")
+        ceo_file = st.file_uploader("대표님 보고 서류", type=["pdf", "docx", "txt", "pptx"], key="ceo_doc_upload")
+        if ceo_file:
+            if st.session_state.ceo_current_doc != ceo_file.name:
+                st.session_state.ceo_current_doc = ceo_file.name; st.rerun()
+        report_text = st.text_area(
+            "보고 내용",
+            key="report_input",
+            height=80,
+            label_visibility="collapsed",
+            placeholder="예: 대표님께 보고할 핵심 내용이나 검토 요청을 입력하세요.",
+        )
+        report_go = st.button("📌 보고 시작", type="primary", use_container_width=True)
+        if report_go:
+            if not ceo_file and not report_text.strip():
+                st.warning("보고 서류를 올리거나 보고 내용을 입력해주세요.")
+            else:
+                st.info("대표님봇 보고 피드백 기능은 다음 단계에서 연결할 예정입니다. 지금은 보고실 UI 껍데기만 준비해둔 상태예요.")
 
 # 최종 결론 패널
 if result_col is not None:
@@ -875,7 +964,8 @@ def upd(statuses_update, results_update=None):
         components.html(
             render_room(st.session_state.bot_statuses,
                         st.session_state.bot_results,
-                        st.session_state.current_doc),
+                        st.session_state.current_doc,
+                        st.session_state.ceo_current_doc),
             height=374,
         )
 
