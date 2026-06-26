@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import io, os, json, re, base64, uuid
+import io, os, json, re, base64, uuid, html
 from concurrent.futures import ThreadPoolExecutor
 
 st.set_page_config(page_title="인사총무팀 AI 에이전트", page_icon="🤖", layout="wide",
@@ -284,9 +284,31 @@ def render_room(statuses, results, doc_name=""):
         "실무봇": "현장에서 실제로 실행 가능한 대응안으로 정리하는 중입니다.",
         "최종정리봇": "오른쪽 연단에서 각 봇 발언을 종합해 최종 결론을 정리하는 중입니다.",
     }
+    _bubble_hints = {
+        "노무봇": "노동법·임금 리스크\n검토 중",
+        "HRM봇": "규정·형평성 기준\n대조 중",
+        "채용봇": "채용 절차·표현 리스크\n확인 중",
+        "계약봇": "불리한 조항·해지 조건\n검토 중",
+        "총무봇": "비용·승인 절차\n확인 중",
+        "급여봇": "급여·4대보험\n계산 중",
+        "교육봇": "OJT·수습평가\n검토 중",
+        "팩트체크봇": "근거와 사실관계\n재확인 중",
+        "실무봇": "현장 실행안으로\n정리 중",
+        "최종정리봇": "각 봇 의견을 모아\n최종 정리 중",
+    }
     _speech_json = json.dumps(_speech, ensure_ascii=False).replace("</", "<\\/")
     _status_json = json.dumps(statuses or {}, ensure_ascii=False).replace("</", "<\\/")
     _hint_json = json.dumps(_hints, ensure_ascii=False).replace("</", "<\\/")
+
+    def _compact(text, limit=58):
+        plain = re.sub(r"[\#\*\>`_\[\]\(\)\-]+", " ", str(text or ""))
+        plain = re.sub(r"\s+", " ", plain).strip()
+        return plain[:limit-1] + "…" if len(plain) > limit else plain
+
+    def _bubble_text(name):
+        if _speech.get(name):
+            return html.escape(_compact(_speech.get(name)))
+        return html.escape(_bubble_hints.get(name, _hints.get(name, "검토 중입니다."))).replace("\n", "<br>")
 
     def robot_face(name, C, D):
         if '노무' in name:
@@ -375,10 +397,7 @@ def render_room(statuses, results, doc_name=""):
     def bot_card(name, status):
         color = SC.get(status, '#bbb')
         glow = f'box-shadow:0 0 8px {color};' if status != 'idle' else ''
-        bubble = ('<div style="font-size:9px;font-weight:700;background:#fff8e1;'
-                  'border:1px solid #f0d98a;border-radius:9px;padding:2px 7px;color:#8a6500;'
-                  'margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);'
-                  'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언 중</div>') if status == 'active' else ''
+        bubble = f'<div class="wf-bubble">{_bubble_text(name)}</div>' if status == 'active' else ''
         short = name.replace('제크', '').replace('정리', '')
         return (f'<div class="wf-bot" onclick="wfShowSpeech(\'{name}\')" title="발언 보기" '
                 f'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
@@ -401,13 +420,10 @@ def render_room(statuses, results, doc_name=""):
     cs = g('최종정리봇')
     c_color = SC.get(cs, '#bbb')
     c_glow = f'box-shadow:0 0 7px {c_color};' if cs != 'idle' else ''
-    c_bubble = ('<div style="font-size:9px;font-weight:700;background:#fff8e1;'
-                'border:1px solid #f0d98a;border-radius:9px;padding:2px 7px;color:#8a6500;'
-                'margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);'
-                'animation:wfBob 1.1s ease-in-out infinite;">\U0001F4AC 발언 중</div>') if cs == 'active' else ''
+    c_bubble = f'<div class="wf-bubble wf-bubble-host">{_bubble_text("최종정리봇")}</div>' if cs == 'active' else ''
 
     podium = (
-        '<div class="wf-host" style="position:absolute;right:0;top:50%;transform:translateY(-50%);'
+        '<div class="wf-host" style="position:absolute;right:22px;top:50%;transform:translateY(-50%);'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;'
         'min-width:124px;">'
         '<div class="wf-podium" onclick="wfShowSpeech(\'최종정리봇\')" title="발언 보기" '
@@ -433,18 +449,23 @@ def render_room(statuses, results, doc_name=""):
         '@keyframes wfBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}'
         '.wf-bot{transition:transform .16s ease,filter .16s ease;background:transparent;border-radius:14px;transform-origin:center bottom;position:relative;z-index:2;}'
         '.wf-bot:hover{transform:translateY(-9px) scale(1.075);filter:drop-shadow(0 12px 14px rgba(47,35,20,.28));background:rgba(255,255,255,.42);z-index:20;}'
+        '.wf-bubble{max-width:116px;min-width:88px;margin-bottom:3px;padding:5px 7px;border-radius:10px;'
+        'background:#fff8e1;border:1px solid #f0d98a;color:#79530b;font-size:9px;font-weight:800;'
+        'line-height:1.25;text-align:center;white-space:normal;box-shadow:0 2px 7px rgba(0,0,0,.16);'
+        'animation:wfBob 1.1s ease-in-out infinite;}'
+        '.wf-bubble-host{max-width:124px;}'
         '.wf-podium{transition:transform .16s ease,box-shadow .16s ease;}'
         '.wf-podium:hover{transform:translateY(-7px) scale(1.035);box-shadow:0 14px 24px rgba(44,35,24,.20)!important;}'
         '</style>'
-        '<div id="wfModal" onclick="if(event.target===this)this.style.display=\'none\'" '
+        '<div id="wfModal" onclick="if(event.target===this)wfCloseSpeech()" '
         'style="display:none;position:fixed;inset:0;background:rgba(25,18,10,.5);z-index:99999;'
-        'align-items:center;justify-content:center;padding:14px;box-sizing:border-box;'
+        'align-items:flex-start;justify-content:flex-start;padding:22px;box-sizing:border-box;'
         'font-family:-apple-system,sans-serif;">'
-        '<div style="background:#fffdf7;max-width:460px;width:100%;max-height:86%;overflow:auto;'
+        '<div style="background:#fffdf7;width:430px;max-width:calc(100% - 44px);max-height:86%;overflow:auto;'
         'border-radius:14px;padding:16px 18px;box-shadow:0 14px 44px rgba(0,0,0,.4);border:1px solid #e6dcc8;">'
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
         '<div id="wfModalTitle" style="font-size:14px;font-weight:800;color:#2a2520;"></div>'
-        '<div onclick="document.getElementById(\'wfModal\').style.display=\'none\'" '
+        '<div onclick="wfCloseSpeech()" '
         'style="cursor:pointer;font-size:20px;color:#9a8b76;line-height:1;padding:0 4px;">×</div>'
         '</div>'
         '<div id="wfModalBody" style="font-size:12.5px;line-height:1.65;color:#3a342c;'
@@ -454,6 +475,13 @@ def render_room(statuses, results, doc_name=""):
         'var WF_SPEECH=' + _speech_json + ';'
         'var WF_STATUS=' + _status_json + ';'
         'var WF_HINT=' + _hint_json + ';'
+        'function wfUploadLayer(muted){try{var d=window.parent&&window.parent.document;'
+        'if(!d)return;d.querySelectorAll("[data-testid=stFileUploader]").forEach(function(e){'
+        'if(muted){e.dataset.wfOldZ=e.style.zIndex||"";e.dataset.wfOldOpacity=e.style.opacity||"";'
+        'e.dataset.wfOldPointer=e.style.pointerEvents||"";e.style.zIndex="1";e.style.opacity=".18";e.style.pointerEvents="none";}'
+        'else{e.style.zIndex=e.dataset.wfOldZ||"";e.style.opacity=e.dataset.wfOldOpacity||"";'
+        'e.style.pointerEvents=e.dataset.wfOldPointer||"";}});}catch(e){}}'
+        'function wfCloseSpeech(){document.getElementById("wfModal").style.display="none";wfUploadLayer(false);}'
         'function wfShowSpeech(n){'
         'document.getElementById("wfModalTitle").textContent="\U0001F4AC "+n+" 발언";'
         'var t=WF_SPEECH[n];'
@@ -461,6 +489,7 @@ def render_room(statuses, results, doc_name=""):
         'var hint=WF_HINT[n]||"이 봇이 자기 관점으로 검토하는 중입니다.";'
         'var empty=s==="active"?hint+"\\n\\n발언이 끝나면 이 창에서 실제 검토 내용이 표시됩니다.":"아직 이 봇의 발언 내용이 없습니다.";'
         'document.getElementById("wfModalBody").textContent=(t&&(""+t).trim())?t:empty;'
+        'wfUploadLayer(true);'
         'document.getElementById("wfModal").style.display="flex";'
         '}'
         '</script>'
