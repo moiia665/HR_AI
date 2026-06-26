@@ -423,7 +423,7 @@ def render_room(statuses, results, doc_name=""):
     c_bubble = f'<div class="wf-bubble wf-bubble-host">{_bubble_text("최종정리봇")}</div>' if cs == 'active' else ''
 
     podium = (
-        '<div class="wf-host" style="position:absolute;right:64px;top:50%;transform:translateY(-50%);'
+        '<div class="wf-host" style="position:absolute;right:230px;top:50%;transform:translateY(-50%);'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;'
         'min-width:124px;">'
         '<div class="wf-podium" onclick="wfShowSpeech(\'최종정리봇\')" title="발언 보기" '
@@ -504,7 +504,7 @@ def render_room(statuses, results, doc_name=""):
         + top_row + '</div>'
         '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
         + bot_card('팩트체크봇', g('팩트체크봇'))
-        + '<div style="width:284px;min-height:132px;"></div>'
+        + '<div style="width:340px;min-height:132px;"></div>'
         + bot_card('실무봇', g('실무봇'))
         + '</div>'
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:4px;transform:translateY(10px);">'
