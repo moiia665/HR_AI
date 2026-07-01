@@ -412,9 +412,10 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         color = SC.get(status, '#bbb')
         glow = f'box-shadow:0 0 8px {color};' if status != 'idle' else ''
         bubble = f'<div class="wf-bubble wf-bubble-{row}">{_bubble_text(name)}</div>' if status == 'active' else ''
+        layer = 25 if status == 'active' else 2
         short = name.replace('제크', '').replace('정리', '')
         return (f'<div class="wf-bot" onclick="wfShowSpeech(\'{name}\')" title="발언 보기" '
-                f'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
+                f'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;z-index:{layer};">'
                 + bubble
                 + svg_robot(name, 62)
                 + f'<div style="font-size:10px;font-weight:800;color:#2a2520;text-align:center;line-height:1.1">{short}</div>'
@@ -527,7 +528,8 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         'line-height:1.25;text-align:center;white-space:normal;box-shadow:0 2px 7px rgba(0,0,0,.16);'
         'cursor:pointer;}'
         '.wf-bubble-top{top:64px;}'
-        '.wf-bubble-bottom,.wf-bubble-side{bottom:70px;}'
+        '.wf-bubble-bottom{bottom:82px;}'
+        '.wf-bubble-side{bottom:76px;}'
         '.wf-bubble-host{max-width:124px;bottom:126px;}'
         '.wf-podium{position:relative;transition:transform .16s ease,box-shadow .16s ease;}'
         '.wf-podium:hover{transform:translateY(-7px) scale(1.035);box-shadow:0 14px 24px rgba(44,35,24,.20)!important;}'
