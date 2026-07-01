@@ -450,7 +450,7 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         'border:1px solid rgba(59,34,18,.92);box-shadow:0 18px 32px rgba(38,25,14,.34),'
         'inset 0 1px 0 rgba(255,236,194,.45),inset 0 -10px 24px rgba(37,19,9,.20);'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-        'position:relative;z-index:3;">'
+        'position:relative;z-index:1;">'
         + table_inner +
         '</div>'
     )
@@ -531,6 +531,9 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         '.wf-bubble-bottom{bottom:82px;}'
         '.wf-bubble-side{bottom:76px;}'
         '.wf-bubble-host{max-width:124px;bottom:126px;}'
+        '.wf-row-top,.wf-row-bottom{position:relative;z-index:35;}'
+        '.wf-row-mid{position:relative;z-index:10;}'
+        '.wf-row-mid .wf-bot{z-index:36!important;}'
         '.wf-podium{position:relative;transition:transform .16s ease,box-shadow .16s ease;}'
         '.wf-podium:hover{transform:translateY(-7px) scale(1.035);box-shadow:0 14px 24px rgba(44,35,24,.20)!important;}'
         '</style>'
@@ -578,14 +581,14 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         '<div style="position:relative;flex:1 1 66.667%;min-width:0;padding:20px 10px 22px;overflow:visible;">'
         '<div style="display:flex;justify-content:center;align-items:center;">'
         '<div style="display:flex;flex-direction:column;align-items:center;transform:translateX(-48px);">'
-        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:0;transform:translateY(-2px);">'
+        '<div class="wf-row-top" style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:0;transform:translateY(-2px);">'
         + top_row + '</div>'
-        '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
+        '<div class="wf-row-mid" style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
         + bot_card('팩트체크봇', g('팩트체크봇'), 'side')
         + meeting_table
         + bot_card('실무봇', g('실무봇'), 'side')
         + '</div>'
-        '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:4px;transform:translateY(10px);">'
+        '<div class="wf-row-bottom" style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:4px;transform:translateY(10px);">'
         + btm_row + '</div>'
         + '</div>'
         + '</div>'
@@ -602,6 +605,7 @@ for k, v in [
     ("bot_statuses", {}), ("bot_results", {}), ("case_notes", ""),
     ("stop_requested", False), ("meeting_running", False),
     ("meeting_history", []), ("renaming_idx", None), ("current_doc", ""),
+    ("uploaded_docs", []), ("doc_upload_nonce", 0),
     ("ceo_current_doc", ""), ("report_input", ""),
     ("report_running", False), ("report_stop_requested", False),
     ("show_result_panel", False), ("last_final", ""), ("selected_history_idx", None),
@@ -684,6 +688,58 @@ def _short(text, limit=28):
     text = (text or "").replace("\n", " ").strip()
     return text if len(text) <= limit else text[:limit - 1] + "…"
 
+def _refresh_current_doc():
+    docs = st.session_state.get("uploaded_docs", [])
+    if not docs:
+        st.session_state.current_doc = ""
+        return
+    names = [d.get("name", "") for d in docs if d.get("name")]
+    if len(names) == 1:
+        st.session_state.current_doc = names[0]
+    else:
+        head = ", ".join(names[:2])
+        more = f" 외 {len(names) - 2}개" if len(names) > 2 else ""
+        st.session_state.current_doc = f"{len(names)}개 파일: {head}{more}"
+
+def _upload_key(file_obj):
+    return f"{getattr(file_obj, 'name', '')}:{getattr(file_obj, 'size', 0)}"
+
+def _add_uploaded_files(files):
+    if not files:
+        return False
+    docs = list(st.session_state.get("uploaded_docs", []))
+    existing = {d.get("key") for d in docs}
+    changed = False
+    for file_obj in files:
+        key = _upload_key(file_obj)
+        if key in existing:
+            continue
+        docs.append({
+            "key": key,
+            "name": file_obj.name,
+            "size": getattr(file_obj, "size", 0),
+            "text": extract_text(file_obj),
+        })
+        existing.add(key)
+        changed = True
+    if changed:
+        st.session_state.uploaded_docs = docs
+        _refresh_current_doc()
+    return changed
+
+def _remove_uploaded_file(key):
+    st.session_state.uploaded_docs = [
+        d for d in st.session_state.get("uploaded_docs", [])
+        if d.get("key") != key
+    ]
+    st.session_state.doc_upload_nonce += 1
+    _refresh_current_doc()
+
+def _clear_uploaded_files():
+    st.session_state.uploaded_docs = []
+    st.session_state.doc_upload_nonce += 1
+    _refresh_current_doc()
+
 def _open_history(real_idx):
     h = st.session_state.meeting_history[real_idx]
     statuses = {}; results = {}
@@ -715,6 +771,8 @@ def _new_meeting():
     st.session_state.bot_statuses = {}
     st.session_state.bot_results = {}
     st.session_state.current_doc = ""
+    st.session_state.uploaded_docs = []
+    st.session_state.doc_upload_nonce += 1
     st.session_state.ceo_current_doc = ""
     st.session_state.meeting_question = ""
     st.session_state.report_input = ""
@@ -857,36 +915,21 @@ with main_col:
     # 업로더를 회의 테이블처럼 겹쳐 올림. 테이블과 어긋나면 margin 첫 값만 조정.
     st.markdown("""
     <style>
-    .st-key-doc_upload [data-testid="stFileUploader"]{
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploader"]{
         width:320px !important; margin:-258px 0 -118px calc(33.333% - 208px) !important;
-        position:relative; z-index:6;
-        opacity:0 !important;
+        position:relative; z-index:8;
+        opacity:1 !important;
         padding:0 !important;
     }
     .st-key-ceo_doc_upload [data-testid="stFileUploader"]{
         display:none !important;
     }
-    .st-key-doc_upload [data-testid="stFileUploader"] label{
-        color:#fff5e1 !important; font-weight:800; font-size:0 !important;
-        display:block !important; width:100% !important;
-        text-align:center !important; margin-bottom:7px !important; letter-spacing:0;
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploader"] label{
+        display:none !important;
     }
-    .st-key-doc_upload [data-testid="stFileUploader"] label *{
-        font-size:0 !important;
-        line-height:0 !important;
-        color:transparent !important;
-    }
-    .st-key-doc_upload [data-testid="stFileUploader"] label::after{
-        content:"문서 업로드";
-        display:block;
-        line-height:1.2;
-        font-size:12px !important;
-        letter-spacing:0;
-        color:#fff5e1 !important;
-    }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]{
-        background:rgba(31,18,10,.24) !important;
-        border:0 !important;
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"]{
+        background:transparent !important;
+        border:2px dashed transparent !important;
         border-radius:18px; min-height:0 !important; height:112px !important;
         width:320px !important; max-width:320px !important; margin:0 auto !important;
         padding:2px 8px !important; cursor:pointer !important;
@@ -894,14 +937,16 @@ with main_col:
         text-align:center;
         display:flex; flex-direction:column; justify-content:center; align-items:center;
     }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]:hover{
-        border-color:#ffe6ad !important; background:rgba(0,0,0,.28) !important;
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"]:hover{
+        border-color:rgba(255,230,173,.95) !important;
+        background:rgba(255,230,173,.18) !important;
+        box-shadow:0 0 0 999px rgba(255,230,173,.05) inset,0 0 18px rgba(255,230,173,.28) !important;
     }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzone"] *{ color:transparent !important; font-size:0 !important; }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzone"] button{ display:none !important; }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]::before{
-        content:"파일 선택";
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzoneInstructions"]{ display:none !important; }
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"] *{ color:transparent !important; font-size:0 !important; }
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"] button{ display:none !important; }
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"]::before{
+        content:"여기에 파일 놓기";
         color:#fff5e1 !important;
         font-size:12px;
         font-weight:800;
@@ -909,39 +954,73 @@ with main_col:
         position:absolute;
         left:0; right:0; top:13px;
         text-align:center;
+        opacity:0;
+        transition:opacity .12s ease;
     }
-    .st-key-doc_upload [data-testid="stFileUploaderDropzone"]::after{
-        content:"PDF · DOCX · TXT · PPTX"; color:rgba(255,245,225,.72) !important;
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"]::after{
+        content:"여러 파일 가능 · PDF · DOCX · TXT · PPTX"; color:rgba(255,245,225,.82) !important;
         font-size:9.5px; font-weight:700; opacity:.95;
         position:absolute;
         left:0; right:0; top:31px;
         text-align:center;
+        opacity:0;
+        transition:opacity .12s ease;
+    }
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"]:hover::before,
+    div[class*="st-key-doc_upload"] [data-testid="stFileUploaderDropzone"]:hover::after{
+        opacity:1;
     }
     </style>
     """, unsafe_allow_html=True)
     if st.session_state.show_result_panel:
         st.markdown("""
         <style>
-        .st-key-doc_upload [data-testid="stFileUploader"]{
+        div[class*="st-key-doc_upload"] [data-testid="stFileUploader"]{
             display:none !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
     go = False
-    ufile = None
+    ufiles = []
     question = ""
 
-    ufile = st.file_uploader("문서 업로드",
-                             type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
-    if ufile:
-        if st.session_state.current_doc != ufile.name:
-            st.session_state.current_doc = ufile.name; st.rerun()
+    ufiles = st.file_uploader(
+        "문서 업로드",
+        type=["pdf", "docx", "txt", "pptx"],
+        accept_multiple_files=True,
+        key=f"doc_upload_{st.session_state.doc_upload_nonce}",
+    )
+    if _add_uploaded_files(ufiles):
+        st.rerun()
 
     meeting_input_col, ceo_input_col = st.columns([2, 1])
     with meeting_input_col:
         st.markdown('<div class="wf-input-panel"><div class="wf-input-title">💬 회의 안건 / 검토 요청</div></div>',
                     unsafe_allow_html=True)
+        if st.session_state.get("uploaded_docs"):
+            st.markdown(
+                '<div style="font-size:12px;font-weight:800;color:#6b5e4f;margin:-2px 0 6px;">업로드 파일</div>',
+                unsafe_allow_html=True,
+            )
+            for i, doc in enumerate(st.session_state.uploaded_docs):
+                file_col, del_col = st.columns([12, 1])
+                with file_col:
+                    st.markdown(
+                        f'<div style="background:#fffaf2;border:1px solid #ded4c7;border-radius:8px;'
+                        f'padding:6px 9px;margin-bottom:4px;font-size:12px;font-weight:700;'
+                        f'color:#2a2520;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+                        f'📄 {html.escape(doc.get("name", ""))}</div>',
+                        unsafe_allow_html=True,
+                    )
+                with del_col:
+                    if st.button("×", key=f"remove_doc_{i}_{doc.get('key','')}", help="파일 삭제", use_container_width=True):
+                        _remove_uploaded_file(doc.get("key", ""))
+                        st.rerun()
+            if len(st.session_state.uploaded_docs) > 1:
+                if st.button("업로드 파일 전체 삭제", key="clear_uploaded_docs", use_container_width=True):
+                    _clear_uploaded_files()
+                    st.rerun()
         btn_c1, btn_c2 = st.columns([3, 1])
         with btn_c1:
             go = st.button("🚀 전문봇들 회의 시작", type="primary", use_container_width=True,
@@ -1138,7 +1217,8 @@ if go:
             prior_ctx = f"\n\n[이전 회의 결론 참고]\n{st.session_state.last_final[:600]}"
         effective_question = _fb + prior_ctx
 
-    if not ufile and not effective_question.strip():
+    uploaded_docs = st.session_state.get("uploaded_docs", [])
+    if not uploaded_docs and not effective_question.strip():
         st.error("문서를 업로드하거나 질문을 입력해주세요.")
         st.stop()
 
@@ -1149,7 +1229,11 @@ if go:
     st.session_state.show_result_panel = False
     st.session_state.current_question = effective_question
 
-    doc_text = extract_text(ufile) if ufile else ""
+    doc_text = "\n\n".join(
+        f"[업로드 문서: {d.get('name', '')}]\n{d.get('text', '')}"
+        for d in uploaded_docs
+        if d.get("text")
+    )
     content  = build_content(doc_text, effective_question, st.session_state.case_notes)
     bp       = st.session_state.bot_prompts
 
@@ -1254,11 +1338,11 @@ if go:
     st.session_state.show_result_panel = True
 
     from datetime import datetime
-    title = (ufile.name if ufile else effective_question[:30])
+    title = (st.session_state.current_doc if uploaded_docs else effective_question[:30])
     entry = {
         "time":     datetime.now().strftime("%Y-%m-%d %H:%M"),
         "title":    title,
-        "doc":      ufile.name if ufile else "",
+        "doc":      st.session_state.current_doc if uploaded_docs else "",
         "question": effective_question[:100],
         "ops1": ops1, "fc1": fc1,
         "ops2": ops2, "fc2": fc2,
