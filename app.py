@@ -555,7 +555,7 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         'function wfUploadLayer(muted){try{var d=window.parent&&window.parent.document;'
         'if(!d)return;d.querySelectorAll("[data-testid=stFileUploader]").forEach(function(e){'
         'if(muted){e.dataset.wfOldZ=e.style.zIndex||"";e.dataset.wfOldOpacity=e.style.opacity||"";'
-        'e.dataset.wfOldPointer=e.style.pointerEvents||"";e.style.zIndex="1";e.style.opacity=".18";e.style.pointerEvents="none";}'
+        'e.dataset.wfOldPointer=e.style.pointerEvents||"";e.style.zIndex="1";e.style.opacity="0";e.style.pointerEvents="none";}'
         'else{e.style.zIndex=e.dataset.wfOldZ||"";e.style.opacity=e.dataset.wfOldOpacity||"";'
         'e.style.pointerEvents=e.dataset.wfOldPointer||"";}});}catch(e){}}'
         'function wfCloseSpeech(){document.getElementById("wfModal").style.display="none";wfUploadLayer(false);}'
@@ -859,8 +859,8 @@ with main_col:
     <style>
     .st-key-doc_upload [data-testid="stFileUploader"]{
         width:320px !important; margin:-258px 0 -118px calc(33.333% - 208px) !important;
-        position:relative; z-index:50;
-        opacity:.01;
+        position:relative; z-index:6;
+        opacity:0 !important;
         padding:0 !important;
     }
     .st-key-ceo_doc_upload [data-testid="stFileUploader"]{
@@ -919,6 +919,14 @@ with main_col:
     }
     </style>
     """, unsafe_allow_html=True)
+    if st.session_state.show_result_panel:
+        st.markdown("""
+        <style>
+        .st-key-doc_upload [data-testid="stFileUploader"]{
+            display:none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
     go = False
     ufile = None
