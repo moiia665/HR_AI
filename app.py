@@ -527,7 +527,7 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         'background:#fff8e1;border:1px solid #f0d98a;color:#79530b;font-size:9px;font-weight:800;'
         'line-height:1.25;text-align:center;white-space:normal;box-shadow:0 2px 7px rgba(0,0,0,.16);'
         'cursor:pointer;}'
-        '.wf-bubble-top{top:64px;}'
+        '.wf-bubble-top{bottom:80px;}'
         '.wf-bubble-bottom{bottom:82px;}'
         '.wf-bubble-side{bottom:76px;}'
         '.wf-bubble-host{max-width:124px;bottom:126px;}'
@@ -577,8 +577,8 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
 
     return (
         '<div style="position:relative;display:flex;background:radial-gradient(ellipse at 34% 50%,rgba(255,255,255,.36),transparent 58%),linear-gradient(180deg,#e9e2d5,#d8d0c0);border-radius:16px;'
-        'min-height:360px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:hidden;">'
-        '<div style="position:relative;flex:1 1 66.667%;min-width:0;padding:20px 10px 22px;overflow:visible;">'
+        'min-height:390px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:hidden;">'
+        '<div style="position:relative;flex:1 1 66.667%;min-width:0;padding:48px 10px 24px;overflow:visible;">'
         '<div style="display:flex;justify-content:center;align-items:center;">'
         '<div style="display:flex;flex-direction:column;align-items:center;transform:translateX(-48px);">'
         '<div class="wf-row-top" style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:0;transform:translateY(-2px);">'
@@ -909,7 +909,7 @@ with main_col:
                         st.session_state.bot_results,
                         st.session_state.current_doc,
                         st.session_state.ceo_current_doc),
-            height=374,
+            height=410,
         )
 
     # 업로더를 회의 테이블처럼 겹쳐 올림. 테이블과 어긋나면 margin 첫 값만 조정.
@@ -1034,6 +1034,14 @@ with main_col:
         question = st.text_area("회의 안건", height=78, label_visibility="collapsed",
             placeholder="예: 이 근로계약서 수습기간 조항이 법적으로 문제없나요?",
             key="meeting_question")
+        if st.session_state.get("meeting_question", "").strip():
+            st.markdown(
+                f'<div style="margin:-2px 0 8px;padding:8px 10px;border:1px solid #dfd4c5;'
+                f'border-radius:8px;background:#fffaf2;color:#2a2520;font-size:12px;line-height:1.45;">'
+                f'<div style="font-weight:900;color:#6b4a2f;margin-bottom:3px;">회의 요청으로 들어갈 내용</div>'
+                f'{html.escape(st.session_state.meeting_question.strip())}</div>',
+                unsafe_allow_html=True,
+            )
 
         if st.session_state.last_final and not st.session_state.meeting_running:
             with st.expander("💬 최종 결론에 대한 추가 질문 / 피드백"):
@@ -1072,6 +1080,14 @@ with main_col:
             label_visibility="collapsed",
             placeholder="대표님께 보고할 내용이나 검토 요청을 입력하세요.",
         )
+        if st.session_state.get("report_input", "").strip():
+            st.markdown(
+                f'<div style="margin:-2px 0 8px;padding:8px 10px;border:1px solid #d5ddd9;'
+                f'border-radius:8px;background:#f8fbf8;color:#2a2520;font-size:12px;line-height:1.45;">'
+                f'<div style="font-weight:900;color:#405c4f;margin-bottom:3px;">대표님 보고로 들어갈 내용</div>'
+                f'{html.escape(st.session_state.report_input.strip())}</div>',
+                unsafe_allow_html=True,
+            )
         if report_go:
             if not report_text.strip():
                 st.warning("보고 내용을 입력해주세요.")
@@ -1162,7 +1178,7 @@ def upd(statuses_update, results_update=None):
                         st.session_state.bot_results,
                         st.session_state.current_doc,
                         st.session_state.ceo_current_doc),
-            height=374,
+            height=410,
         )
 
 def check_stop():
