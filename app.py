@@ -603,7 +603,8 @@ for k, v in [
     ("ceo_current_doc", ""), ("report_input", ""),
     ("report_running", False), ("report_stop_requested", False),
     ("show_result_panel", False), ("last_final", ""), ("selected_history_idx", None),
-    ("current_question", ""), ("feedback_pending", ""), ("stop_notice", ""),
+    ("current_question", ""), ("meeting_question", ""), ("feedback_input", ""),
+    ("feedback_pending", ""), ("stop_notice", ""),
     ("saved_provider", _cfg.get("provider", list(PROVIDERS.keys())[0])),
     ("saved_model",    _cfg.get("model", "")),
     ("saved_api_key",  _cfg.get("api_key", "")),
@@ -713,7 +714,9 @@ def _new_meeting():
     st.session_state.bot_results = {}
     st.session_state.current_doc = ""
     st.session_state.ceo_current_doc = ""
+    st.session_state.meeting_question = ""
     st.session_state.report_input = ""
+    st.session_state.feedback_input = ""
     st.session_state.last_final = ""
     st.session_state.show_result_panel = False
     st.session_state.selected_history_idx = None
@@ -724,6 +727,11 @@ def _new_meeting():
     st.session_state.report_stop_requested = False
     st.session_state.feedback_pending = ""
     st.session_state.stop_notice = ""
+
+def _queue_feedback():
+    feedback = st.session_state.get("feedback_input", "").strip()
+    if feedback:
+        st.session_state.feedback_pending = feedback
 
 with st.sidebar:
     sync_shared_history()
@@ -942,11 +950,10 @@ with main_col:
             with st.expander("💬 최종 결론에 대한 추가 질문 / 피드백"):
                 feedback_q = st.text_area("피드백 내용", key="feedback_input", height=80,
                     placeholder="예: 수습 3개월 조항에 대해서만 자세히 뜯어봐줘.")
-                if st.button("↻ 피드백 반영 추가 회의", key="feedback_go"):
-                    if feedback_q.strip():
-                        st.session_state.feedback_pending = feedback_q.strip(); st.rerun()
-                    else:
-                        st.warning("추가 질문이나 피드백 내용을 먼저 입력해주세요.")
+                st.button("↻ 피드백 반영 추가 회의", key="feedback_go",
+                          on_click=_queue_feedback)
+                if st.session_state.get("feedback_go") and not feedback_q.strip():
+                    st.warning("추가 질문이나 피드백 내용을 먼저 입력해주세요.")
 
         if st.session_state.get("feedback_pending"):
             go = True
