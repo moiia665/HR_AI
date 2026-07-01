@@ -408,10 +408,10 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
                 f'<path d="M8 38h5M51 38h5" stroke="#9B8E7D" stroke-width="3.2" stroke-linecap="round"/>'
                 f'</svg>')
 
-    def bot_card(name, status):
+    def bot_card(name, status, row='mid'):
         color = SC.get(status, '#bbb')
         glow = f'box-shadow:0 0 8px {color};' if status != 'idle' else ''
-        bubble = f'<div class="wf-bubble">{_bubble_text(name)}</div>' if status == 'active' else ''
+        bubble = f'<div class="wf-bubble wf-bubble-{row}">{_bubble_text(name)}</div>' if status == 'active' else ''
         short = name.replace('제크', '').replace('정리', '')
         return (f'<div class="wf-bot" onclick="wfShowSpeech(\'{name}\')" title="발언 보기" '
                 f'style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 5px;min-width:66px;">'
@@ -423,13 +423,36 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
 
     def g(n): return statuses.get(n, 'idle')
 
-    top_row = ''.join(bot_card(n, g(n)) for n in ['노무봇','HRM봇','채용봇','계약봇'])
-    btm_row = ''.join(bot_card(n, g(n)) for n in ['총무봇','급여봇','교육봇'])
+    top_row = ''.join(bot_card(n, g(n), 'top') for n in ['노무봇','HRM봇','채용봇','계약봇'])
+    btm_row = ''.join(bot_card(n, g(n), 'bottom') for n in ['총무봇','급여봇','교육봇'])
 
     if doc_name:
-        table_inner = f'<div style="background:rgba(255,255,255,.88);border-radius:4px;padding:3px 10px;font-size:9px;color:#3a2800;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📄 {doc_name}</div>'
+        table_inner = (
+            f'<div style="font-size:11px;font-weight:900;color:#fff5e1;">업로드 문서</div>'
+            f'<div style="max-width:236px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+            f'font-size:10.5px;font-weight:900;color:#fff9eb;background:rgba(31,18,10,.28);'
+            f'border:1px solid rgba(255,238,202,.35);border-radius:10px;padding:6px 10px;margin-top:8px;">📄 {html.escape(doc_name)}</div>'
+        )
     else:
-        table_inner = '<div style="height:46px"></div>'
+        table_inner = (
+            '<div style="font-size:12px;font-weight:900;color:#fff5e1;">문서 업로드</div>'
+            '<div style="width:268px;height:50px;margin-top:10px;border:1px dashed rgba(255,238,202,.88);'
+            'border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+            '<div style="font-size:12px;font-weight:900;color:#fff5e1;">파일 선택</div>'
+            '<div style="font-size:9px;font-weight:800;color:rgba(255,245,225,.72);margin-top:5px;">PDF · DOCX · TXT · PPTX</div>'
+            '</div>'
+        )
+    meeting_table = (
+        '<div class="wf-table" style="width:320px;height:112px;border-radius:18px;'
+        'background:radial-gradient(ellipse at 50% 8%,rgba(255,229,174,.34),transparent 46%),'
+        'linear-gradient(155deg,#9A6840 0%,#6E4325 44%,#3E2415 100%);'
+        'border:1px solid rgba(59,34,18,.92);box-shadow:0 18px 32px rgba(38,25,14,.34),'
+        'inset 0 1px 0 rgba(255,236,194,.45),inset 0 -10px 24px rgba(37,19,9,.20);'
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+        'position:relative;z-index:3;">'
+        + table_inner +
+        '</div>'
+    )
 
     cs = g('최종정리봇')
     c_color = SC.get(cs, '#bbb')
@@ -458,15 +481,16 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
     )
 
     ceo_doc = (
-        f'<div style="max-width:132px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
-        f'font-size:9px;font-weight:800;color:#514130;background:rgba(255,255,255,.74);'
-        f'border:1px solid rgba(110,92,70,.22);border-radius:8px;padding:4px 8px;">📄 {html.escape(ceo_doc_name)}</div>'
+        f'<div style="max-width:178px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+        f'font-size:10px;font-weight:900;color:#fff5e1;background:rgba(31,18,10,.22);'
+        f'border:1px solid rgba(255,238,202,.42);border-radius:10px;padding:6px 10px;">📄 {html.escape(ceo_doc_name)}</div>'
         if ceo_doc_name else
-        '<div style="font-size:9px;font-weight:800;color:#7b6f62;background:rgba(255,255,255,.42);'
-        'border:1px dashed rgba(110,92,70,.28);border-radius:8px;padding:4px 8px;">보고 서류 대기</div>'
+        '<div style="font-size:11px;font-weight:900;color:rgba(255,245,225,.74);'
+        'border:1px dashed rgba(255,238,202,.62);border-radius:13px;padding:13px 20px;'
+        'background:rgba(31,18,10,.20);">보고 서류 대기</div>'
     )
     ceo_office = (
-        '<div style="position:relative;flex:0 0 25%;min-width:210px;overflow:hidden;'
+        '<div style="position:relative;flex:0 0 33.333%;min-width:210px;overflow:hidden;'
         'border-left:1px solid rgba(120,150,170,.38);'
         'background:linear-gradient(120deg,rgba(235,245,247,.78),rgba(226,223,211,.82));">'
         '<div style="position:absolute;inset:0;background:repeating-linear-gradient(110deg,'
@@ -477,12 +501,13 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
         '<div style="position:relative;height:100%;display:flex;flex-direction:column;align-items:center;'
         'justify-content:center;gap:6px;padding:16px 14px 14px;">'
         '<div style="font-size:10px;font-weight:900;color:#5d5248;letter-spacing:.02em;">대표실</div>'
-        + svg_robot('대표님봇', 76)
-        + '<div style="width:154px;height:48px;margin-top:-8px;border-radius:11px 11px 7px 7px;'
-        'background:linear-gradient(180deg,#8B5E3C,#4E3020);border:1px solid #3e281b;'
-        'box-shadow:0 12px 20px rgba(45,30,18,.25),inset 0 1px 0 rgba(255,235,190,.34);'
-        'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;">'
-        '<div style="font-size:8px;font-weight:900;color:rgba(255,245,225,.68);letter-spacing:1px;">CEO DESK</div>'
+        + svg_robot('대표님봇', 84)
+        + '<div style="width:min(230px,84%);height:112px;margin-top:-10px;border-radius:18px 18px 10px 10px;'
+        'background:radial-gradient(ellipse at 50% 8%,rgba(255,229,174,.28),transparent 48%),linear-gradient(155deg,#9A6840 0%,#6E4325 44%,#3E2415 100%);'
+        'border:1px solid rgba(59,34,18,.92);box-shadow:0 18px 32px rgba(38,25,14,.30),'
+        'inset 0 1px 0 rgba(255,236,194,.42),inset 0 -10px 24px rgba(37,19,9,.20);'
+        'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;">'
+        '<div style="font-size:9px;font-weight:900;color:rgba(255,245,225,.66);letter-spacing:1px;">CEO DESK</div>'
         + ceo_doc
         + '</div>'
         '<div style="font-size:11px;font-weight:900;color:#2a2520;">대표님봇</div>'
@@ -495,14 +520,16 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
     _modal_html = (
         '<style>'
         '@keyframes wfBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}'
-        '.wf-bot{transition:transform .16s ease,filter .16s ease;background:transparent;border-radius:14px;transform-origin:center bottom;position:relative;z-index:2;}'
-        '.wf-bot:hover{transform:translateY(-9px) scale(1.075);filter:drop-shadow(0 12px 14px rgba(47,35,20,.28));background:rgba(255,255,255,.42);z-index:20;}'
-        '.wf-bubble{max-width:116px;min-width:88px;margin-bottom:3px;padding:5px 7px;border-radius:10px;'
+        '.wf-bot{transition:transform .16s ease,filter .16s ease;background:transparent;border-radius:14px;transform-origin:center bottom;position:relative;z-index:2;min-height:84px;}'
+        '.wf-bot:hover{transform:translateY(-9px) scale(1.075);filter:drop-shadow(0 12px 14px rgba(47,35,20,.28));background:rgba(255,255,255,.42);z-index:40;}'
+        '.wf-bubble{position:absolute;left:50%;transform:translateX(-50%);z-index:60;max-width:116px;min-width:88px;margin:0;padding:5px 7px;border-radius:10px;'
         'background:#fff8e1;border:1px solid #f0d98a;color:#79530b;font-size:9px;font-weight:800;'
         'line-height:1.25;text-align:center;white-space:normal;box-shadow:0 2px 7px rgba(0,0,0,.16);'
-        'animation:wfBob 1.1s ease-in-out infinite;}'
-        '.wf-bubble-host{max-width:124px;}'
-        '.wf-podium{transition:transform .16s ease,box-shadow .16s ease;}'
+        'cursor:pointer;}'
+        '.wf-bubble-top{top:64px;}'
+        '.wf-bubble-bottom,.wf-bubble-side{bottom:70px;}'
+        '.wf-bubble-host{max-width:124px;bottom:126px;}'
+        '.wf-podium{position:relative;transition:transform .16s ease,box-shadow .16s ease;}'
         '.wf-podium:hover{transform:translateY(-7px) scale(1.035);box-shadow:0 14px 24px rgba(44,35,24,.20)!important;}'
         '</style>'
         '<div id="wfModal" onclick="if(event.target===this)wfCloseSpeech()" '
@@ -544,17 +571,17 @@ def render_room(statuses, results, doc_name="", ceo_doc_name=""):
     )
 
     return (
-        '<div style="position:relative;display:flex;background:radial-gradient(ellipse at 37% 50%,rgba(255,255,255,.36),transparent 58%),linear-gradient(180deg,#e9e2d5,#d8d0c0);border-radius:16px;'
-        'min-height:326px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:hidden;">'
-        '<div style="position:relative;flex:1 1 75%;min-width:0;padding:16px 10px 18px;overflow:visible;">'
+        '<div style="position:relative;display:flex;background:radial-gradient(ellipse at 34% 50%,rgba(255,255,255,.36),transparent 58%),linear-gradient(180deg,#e9e2d5,#d8d0c0);border-radius:16px;'
+        'min-height:360px;border:1px solid #cec8be;font-family:-apple-system,sans-serif;overflow:hidden;">'
+        '<div style="position:relative;flex:1 1 66.667%;min-width:0;padding:20px 10px 22px;overflow:visible;">'
         '<div style="display:flex;justify-content:center;align-items:center;">'
-        '<div style="display:flex;flex-direction:column;align-items:center;">'
+        '<div style="display:flex;flex-direction:column;align-items:center;transform:translateX(-48px);">'
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:0;transform:translateY(-2px);">'
         + top_row + '</div>'
         '<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:4px 0;">'
-        + bot_card('팩트체크봇', g('팩트체크봇'))
-        + '<div style="width:340px;min-height:132px;"></div>'
-        + bot_card('실무봇', g('실무봇'))
+        + bot_card('팩트체크봇', g('팩트체크봇'), 'side')
+        + meeting_table
+        + bot_card('실무봇', g('실무봇'), 'side')
         + '</div>'
         '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-top:4px;transform:translateY(10px);">'
         + btm_row + '</div>'
@@ -574,6 +601,7 @@ for k, v in [
     ("stop_requested", False), ("meeting_running", False),
     ("meeting_history", []), ("renaming_idx", None), ("current_doc", ""),
     ("ceo_current_doc", ""), ("report_input", ""),
+    ("report_running", False), ("report_stop_requested", False),
     ("show_result_panel", False), ("last_final", ""), ("selected_history_idx", None),
     ("current_question", ""), ("feedback_pending", ""), ("stop_notice", ""),
     ("saved_provider", _cfg.get("provider", list(PROVIDERS.keys())[0])),
@@ -677,6 +705,8 @@ def _open_history(real_idx):
     st.session_state.selected_history_idx = real_idx
     st.session_state.meeting_running = False
     st.session_state.stop_requested = False
+    st.session_state.report_running = False
+    st.session_state.report_stop_requested = False
 
 def _new_meeting():
     st.session_state.bot_statuses = {}
@@ -690,6 +720,8 @@ def _new_meeting():
     st.session_state.renaming_idx = None
     st.session_state.meeting_running = False
     st.session_state.stop_requested = False
+    st.session_state.report_running = False
+    st.session_state.report_stop_requested = False
     st.session_state.feedback_pending = ""
     st.session_state.stop_notice = ""
 
@@ -765,7 +797,7 @@ with st.sidebar:
 
 # ── 메인 레이아웃 ──────────────────────────────────────────
 if st.session_state.show_result_panel and st.session_state.last_final:
-    main_col, result_col = st.columns([3, 2])
+    main_col, result_col = st.columns([5, 2])
 else:
     main_col = st.container(); result_col = None
 
@@ -785,13 +817,23 @@ with main_col:
         st.session_state.stop_notice = ""
 
     st.divider()
-    work_mode = st.radio(
-        "진행 방식",
-        ["전문봇 회의", "대표님 보고"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="work_mode",
-    )
+    st.markdown("""
+    <style>
+    .st-key-work_mode { display:none !important; }
+    .wf-input-title{
+        font-size:18px;
+        font-weight:900;
+        color:#2b2730;
+        margin:4px 0 10px;
+    }
+    .wf-input-panel{
+        border-top:1px solid rgba(80,70,55,.18);
+        padding-top:14px;
+        margin-top:4px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    work_mode = "전문봇 회의"
     table_slot = st.empty()
     with table_slot:
         components.html(
@@ -806,25 +848,13 @@ with main_col:
     st.markdown("""
     <style>
     .st-key-doc_upload [data-testid="stFileUploader"]{
-        width:340px !important; margin:-268px 0 -190px calc(37.5% - 170px) !important;
+        width:320px !important; margin:-258px 0 -118px calc(33.333% - 208px) !important;
         position:relative; z-index:50;
-        background:
-            radial-gradient(ellipse at 50% 8%, rgba(255,229,174,.34), transparent 46%),
-            linear-gradient(155deg,#9A6840 0%,#6E4325 44%,#3E2415 100%) !important;
-        border:1px solid rgba(59,34,18,.92) !important; border-radius:18px !important;
-        box-shadow:
-            0 18px 32px rgba(38,25,14,.34),
-            inset 0 1px 0 rgba(255,236,194,.45),
-            inset 0 -10px 24px rgba(37,19,9,.20) !important;
-        padding:13px 16px 14px !important;
-        transition:transform .16s ease, box-shadow .16s ease;
+        opacity:.01;
+        padding:0 !important;
     }
-    .st-key-doc_upload [data-testid="stFileUploader"]:hover{
-        transform:translateY(-2px);
-        box-shadow:
-            0 22px 36px rgba(38,25,14,.38),
-            inset 0 1px 0 rgba(255,236,194,.52),
-            inset 0 -10px 24px rgba(37,19,9,.20) !important;
+    .st-key-ceo_doc_upload [data-testid="stFileUploader"]{
+        display:none !important;
     }
     .st-key-doc_upload [data-testid="stFileUploader"] label{
         color:#fff5e1 !important; font-weight:800; font-size:0 !important;
@@ -846,9 +876,9 @@ with main_col:
     }
     .st-key-doc_upload [data-testid="stFileUploaderDropzone"]{
         background:rgba(31,18,10,.24) !important;
-        border:1px dashed rgba(255,238,202,.88) !important;
-        border-radius:12px; min-height:0 !important; height:54px !important;
-        width:296px !important; max-width:296px !important; margin:0 auto !important;
+        border:0 !important;
+        border-radius:18px; min-height:0 !important; height:112px !important;
+        width:320px !important; max-width:320px !important; margin:0 auto !important;
         padding:2px 8px !important; cursor:pointer !important;
         position:relative;
         text-align:center;
@@ -884,7 +914,77 @@ with main_col:
     ufile = None
     question = ""
 
-    if work_mode == "전문봇 회의":
+    ufile = st.file_uploader("문서 업로드",
+                             type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
+    if ufile:
+        if st.session_state.current_doc != ufile.name:
+            st.session_state.current_doc = ufile.name; st.rerun()
+
+    meeting_input_col, ceo_input_col = st.columns([2, 1])
+    with meeting_input_col:
+        st.markdown('<div class="wf-input-panel"><div class="wf-input-title">💬 회의 안건 / 검토 요청</div></div>',
+                    unsafe_allow_html=True)
+        btn_c1, btn_c2 = st.columns([3, 1])
+        with btn_c1:
+            go = st.button("🚀 전문봇들 회의 시작", type="primary", use_container_width=True,
+                           disabled=st.session_state.meeting_running)
+        with btn_c2:
+            if st.button("■ 중단", use_container_width=True,
+                         disabled=not st.session_state.meeting_running):
+                st.session_state.stop_requested = True
+                st.rerun()
+
+        question = st.text_area("회의 안건", height=78, label_visibility="collapsed",
+            placeholder="예: 이 근로계약서 수습기간 조항이 법적으로 문제없나요?",
+            key="meeting_question")
+
+        if st.session_state.last_final and not st.session_state.meeting_running:
+            with st.expander("💬 최종 결론에 대한 추가 질문 / 피드백"):
+                feedback_q = st.text_area("피드백 내용", key="feedback_input", height=80,
+                    placeholder="예: 수습 3개월 조항에 대해서만 자세히 뜯어봐줘.")
+                if st.button("↻ 피드백 반영 추가 회의", key="feedback_go"):
+                    if feedback_q.strip():
+                        st.session_state.feedback_pending = feedback_q.strip(); st.rerun()
+                    else:
+                        st.warning("추가 질문이나 피드백 내용을 먼저 입력해주세요.")
+
+        if st.session_state.get("feedback_pending"):
+            go = True
+
+    with ceo_input_col:
+        st.markdown('<div class="wf-input-panel"><div class="wf-input-title">🏢 대표님봇 보고</div></div>',
+                    unsafe_allow_html=True)
+        report_btn_c1, report_btn_c2 = st.columns([3, 1])
+        with report_btn_c1:
+            report_go = st.button("📌 대표님봇 보고 시작", type="primary", use_container_width=True,
+                                  disabled=st.session_state.report_running, key="report_start")
+        with report_btn_c2:
+            if st.button("■ 중단", use_container_width=True,
+                         disabled=not st.session_state.report_running, key="report_stop"):
+                st.session_state.report_stop_requested = True
+                st.session_state.report_running = False
+                st.session_state.stop_notice = "대표님봇 보고가 중단되었습니다."
+                st.rerun()
+        ceo_file = st.file_uploader("대표님 보고 서류", type=["pdf", "docx", "txt", "pptx"], key="ceo_doc_upload")
+        if ceo_file:
+            if st.session_state.ceo_current_doc != ceo_file.name:
+                st.session_state.ceo_current_doc = ceo_file.name; st.rerun()
+        report_text = st.text_area(
+            "보고 내용",
+            key="report_input",
+            height=78,
+            label_visibility="collapsed",
+            placeholder="대표님께 보고할 내용이나 검토 요청을 입력하세요.",
+        )
+        if report_go:
+            if not report_text.strip():
+                st.warning("보고 내용을 입력해주세요.")
+            else:
+                st.session_state.report_running = True
+                st.session_state.report_stop_requested = False
+                st.info("대표님봇 피드백 기능은 다음 단계에서 연결할 예정입니다. 지금은 보고 UI 껍데기만 분리해둔 상태예요.")
+
+    if False:
         ufile = st.file_uploader("문서 업로드",
                                  type=["pdf", "docx", "txt", "pptx"], key="doc_upload")
         if ufile:
@@ -922,7 +1022,7 @@ with main_col:
 
         if st.session_state.get("feedback_pending"):
             go = True
-    else:
+    if False:
         st.markdown(
             '<div style="height:8px;border-top:1px solid rgba(80,70,55,.18);margin:4px 0 8px;"></div>',
             unsafe_allow_html=True,
@@ -1002,6 +1102,9 @@ def check_stop():
         st.session_state.stop_requested = False
         st.session_state.stop_notice = notice
         st.rerun()
+
+if st.session_state.stop_requested and not go:
+    check_stop()
 
 # ── 회의 진행 ──────────────────────────────────────────────
 if go:
